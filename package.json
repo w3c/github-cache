@@ -1,0 +1,71 @@
+{
+  "name": "github-cache",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plehegar/github-cache.git"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@octokit/core": "2.*.*",
+    "@octokit/plugin-throttling": "2.*.*",
+    "express": "4.*.*"
+  },
+  "devDependencies": {
+    "eslint": "6.*.*"
+  },
+  "eslintConfig": {
+    "env": {
+      "es6": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "rules": {
+      "array-bracket-spacing": "error",
+      "arrow-spacing": "error",
+      "block-spacing": "error",
+      "brace-style": "error",
+      "comma-spacing": "error",
+      "curly": "error",
+      "func-call-spacing": "error",
+      "generator-star-spacing": "error",
+      "indent": [
+        "error",
+        2
+      ],
+      "key-spacing": "error",
+      "keyword-spacing": "error",
+      "no-multi-spaces": "error",
+      "no-tabs": "error",
+      "no-trailing-spaces": "error",
+      "object-curly-spacing": "error",
+      "prefer-const": "error",
+      "rest-spread-spacing": "error",
+      "semi-spacing": "error",
+      "space-before-blocks": "error",
+      "space-before-function-paren": [
+        "error",
+        {
+          "anonymous": "never",
+          "named": "never",
+          "asyncArrow": "always"
+        }
+      ],
+      "space-in-parens": "error",
+      "space-infix-ops": "error",
+      "space-unary-ops": "error",
+      "template-curly-spacing": "error",
+      "yield-star-spacing": "error"
+    },
+    "parserOptions": {
+      "ecmaVersion": 2019
+    }
+  }
+}
