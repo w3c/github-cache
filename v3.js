@@ -98,7 +98,12 @@ router.route('/orgs/:owner/repos')
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const { repo, owner } = req;
-    gh.get(`/repos/${owner}/${repo}`, params(req))
+    gh.get(`/orgs/${owner}/repos`, params(req))
+      .then(repos => {
+        const rep = repos.filter(r => r.name === repo)[0];
+        if (!rep) throw new Error(`repository not found ${owner}/${repo}`);
+        return rep;
+      })
       .then(conf => resJson(req, res, conf))
       .catch(err => defaultError(req, res, next, err));
   });
