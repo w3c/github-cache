@@ -5,6 +5,7 @@ A simple cache for GitHub
 Use npm start
 
 The server exposes the following routes:
+
 - `/orgs/:owner/repos`
 - `/repos/:owner/:repo`
 - `/repos/:owner/:repo/labels`
@@ -19,6 +20,7 @@ The server exposes the following routes:
 - `/repos/:owner/:repo/issues/:number/comments`
 
 For each route, you may use th following optional parameters:
+
 - `ttl` : a number representing the minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names
 
