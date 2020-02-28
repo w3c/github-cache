@@ -64,7 +64,13 @@ app.options('*', (req, res, next) => {
   return next();
 });
 
+// Our various routes
+
 router.route('/orgs/:owner/repos')
+  .options((req, res, next) => {
+    security(req, res);
+    return next();
+  })
   .get((req, res, next) => {
     const { owner } = full_name(req);
     security(req, res);
@@ -78,6 +84,10 @@ router.route('/orgs/:owner/repos')
   });
 
 router.route('/repos/:owner/:repo')
+  .options((req, res, next) => {
+    security(req, res);
+    return next();
+  })
   .get((req, res, next) => {
     const { repo, owner } = full_name(req);
     security(req, res);
@@ -144,6 +154,10 @@ router.route('/repos/:owner/:repo/issues')
   });
 
 router.route('/repos/:owner/:repo/issues/:number')
+  .options((req, res, next) => {
+    security(req, res);
+    return next();
+  })
   .get((req, res, next) => {
     const { repo, owner } = full_name(req);
     const number = req.params.number;
@@ -167,6 +181,10 @@ router.route('/repos/:owner/:repo/issues/:number')
   });
 
 router.route('/repos/:owner/:repo/issues/:number/comments')
+  .options((req, res, next) => {
+    security(req, res);
+    return next();
+  })
   .get((req, res, next) => {
     const { repo, owner } = full_name(req);
     const number = req.params.number;
