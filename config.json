@@ -2,7 +2,7 @@
   "ghToken": "give-me-a-proper-token-from-github",
   "port": 5000,
   "cache": "cache",
-  "allowOrigin": [
+  "allowOrigins": [
     "https://www.w3.org",
     "https://w3c.github.io"
   ]

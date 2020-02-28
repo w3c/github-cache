@@ -144,7 +144,7 @@ function compareIssues(a, b) {
 router.route('/v3/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const { repo, owner } = req;
-    const state = req.query.state;
+    let state = req.query.state;
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
       .then(issues => issues.sort(compareIssues))
       .then(issues => {
