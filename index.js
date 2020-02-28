@@ -19,9 +19,9 @@ monitor.install(app);
 
 // filter the req.query to isolate ttl
 function params(req) {
-  let params = {};
+  const params = {};
   if (req.query.ttl) {
-    let ttl = Number.parseInt(req.query.ttl);
+    const ttl = Number.parseInt(req.query.ttl);
     if (ttl > -2 && ttl < 1440) {
       params.ttl = ttl;
     }
@@ -45,7 +45,7 @@ function full_name(req) {
   if (!OWNERS.includes(req.params.owner.toLowerCase())) {
     monitor.error("Unexpected owner access " + req.params.owner);
   }
-  return { owner: req.params.owner, repo: req.params.repo };
+  return {owner: req.params.owner, repo: req.params.repo};
 }
 
 // CORS
@@ -94,7 +94,7 @@ router.route('/orgs/:owner/repos')
     return next();
   })
   .get((req, res, next) => {
-    const { owner } = full_name(req);
+    const {owner} = full_name(req);
     security(req, res);
     gh.get(`/orgs/${owner}/repos`, params(req))
       .then(conf => resJson(req, res, conf))
@@ -111,7 +111,7 @@ router.route('/repos/:owner/:repo')
     return next();
   })
   .get((req, res, next) => {
-    const { repo, owner } = full_name(req);
+    const {repo, owner} = full_name(req);
     security(req, res);
     gh.get(`/repos/${owner}/${repo}`, params(req))
       .then(conf => resJson(req, res, conf))
@@ -129,7 +129,7 @@ async function gh_route(path) {
       return next();
     })
     .get((req, res, next) => {
-      const { repo, owner } = full_name(req);
+      const {repo, owner} = full_name(req);
       security(req, res);
       gh.get(`/repos/${owner}/${repo}/${path}`, params(req))
         .then(data => resJson(req, res, data))
@@ -157,7 +157,7 @@ router.route('/repos/:owner/:repo/issues')
     return next();
   })
   .get((req, res, next) => {
-    const { repo, owner } = full_name(req);
+    const {repo, owner} = full_name(req);
     const state = req.query.state;
     security(req, res);
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
@@ -182,7 +182,7 @@ router.route('/repos/:owner/:repo/issues/:number')
     return next();
   })
   .get((req, res, next) => {
-    const { repo, owner } = full_name(req);
+    const {repo, owner} = full_name(req);
     const number = req.params.number;
     security(req, res);
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
@@ -209,7 +209,7 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
     return next();
   })
   .get((req, res, next) => {
-    const { repo, owner } = full_name(req);
+    const {repo, owner} = full_name(req);
     const number = req.params.number;
     security(req, res);
     gh.get(`/repos/${owner}/${repo}/issues/${number}/comments`, params(req))
@@ -224,7 +224,7 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
 app.use(router);
 
 const port = config.port || 5000;
-const server = app.listen(port, function () {
+const server = app.listen(port, () => {
   console.log("Server started in", (Date.now() - t0) + "ms.\n");
   console.log("Using port " + server.address().port);
 });
