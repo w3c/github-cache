@@ -64,6 +64,28 @@ app.options('*', (req, res, next) => {
   return next();
 });
 
+// filter object properties
+function resJson(req, res, objs) {
+  let fields = req.query.fields;
+  function skim(obj) {
+    const newobj = {};
+    for (const key in obj) {
+      if (fields.includes(key)) {
+        newobj[key] = obj[key];
+      }
+    }
+    return newobj;
+  }
+  let retObj;
+  if (!fields) {
+    retObj = objs;
+  } else {
+    fields = fields.split(',');
+    retObj = (Array.isArray(objs)) ? objs.map(skim) : skim(objs);
+  }
+  res.json(retObj);
+}
+
 // Our various routes
 
 router.route('/orgs/:owner/repos')
@@ -75,7 +97,7 @@ router.route('/orgs/:owner/repos')
     const { owner } = full_name(req);
     security(req, res);
     gh.get(`/orgs/${owner}/repos`, params(req))
-      .then(conf => res.json(conf))
+      .then(conf => resJson(req, res, conf))
       .catch(err => {
         monitor.error(err);
         res.status(404).send(`Cannot GET ${req.url}`);
@@ -92,7 +114,7 @@ router.route('/repos/:owner/:repo')
     const { repo, owner } = full_name(req);
     security(req, res);
     gh.get(`/repos/${owner}/${repo}`, params(req))
-      .then(conf => res.json(conf))
+      .then(conf => resJson(req, res, conf))
       .catch(err => {
         monitor.error(err);
         res.status(404).send(`Cannot GET ${req.url}`);
@@ -110,7 +132,7 @@ async function gh_route(path) {
       const { repo, owner } = full_name(req);
       security(req, res);
       gh.get(`/repos/${owner}/${repo}/${path}`, params(req))
-        .then(data => res.json(data))
+        .then(data => resJson(req, res, data))
         .catch(err => {
           monitor.error(err);
           res.status(404).send(`Cannot GET ${req.url}`);
@@ -146,7 +168,7 @@ router.route('/repos/:owner/:repo/issues')
           return issues.filter(i => i.state === state);
         }
       })
-      .then(issues => res.json(issues))
+      .then(issues => resJson(req, res, issues))
       .catch(err => {
         monitor.error(err);
         res.status(404).send(`Cannot GET ${req.url}`);
@@ -170,7 +192,7 @@ router.route('/repos/:owner/:repo/issues/:number')
           monitor.warn(`${owner}/${repo}/issues/${number} doesn't exist`);
           res.status(404).send(`Cannot GET ${req.url}`);
         } else {
-          res.json(issue);
+          resJson(req, res, issue);
         }
         return next();
       })
@@ -191,7 +213,7 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
     const number = req.params.number;
     security(req, res);
     gh.get(`/repos/${owner}/${repo}/issues/${number}/comments`, params(req))
-      .then(comments => res.json(comments))
+      .then(comments => resJson(req, res, comments))
       .catch(err => {
         monitor.error(err);
         res.status(404).send(`Cannot GET ${req.url}`);
