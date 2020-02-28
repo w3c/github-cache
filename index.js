@@ -62,6 +62,19 @@ app.options('*', (req, res, next) => {
   return next();
 });
 
+router.route('/orgs/:owner/repos')
+  .get((req, res, next) => {
+    const { owner } = full_name(req);
+    security(req, res);
+    gh.get(`/orgs/${owner}/repos`, params(req))
+      .then(conf => res.json(conf))
+      .catch(err => {
+        monitor.error(err);
+        res.status(404).send(`Cannot GET ${req.url}`);
+        return next()
+      });
+  });
+
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const { repo, owner } = full_name(req);
