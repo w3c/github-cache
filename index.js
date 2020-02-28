@@ -90,10 +90,11 @@ router.all("/v3/*", (req, res, next) => {
   const ALLOW_ORIGINS = config.allowOrigins || ["http://localhost:8080"];
   let origin = req.headers.origin;
   if (!ALLOW_ORIGINS.includes(origin)) {
-    origin = "http://localhost:8000/"; // denied, invalid origin
+    origin = "origin-denied"; // denied, invalid origin
   }
   res.set("Access-Control-Allow-Origin", origin);
   res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.set('Timing-Allow-Origin', origin);
   return next();
 });
 
