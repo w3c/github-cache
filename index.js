@@ -119,6 +119,7 @@ async function gh_route(path) {
     });
 }
 
+gh_route('labels');
 gh_route('teams');
 gh_route('hooks');
 gh_route('license');
@@ -191,19 +192,6 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
     security(req, res);
     gh.get(`/repos/${owner}/${repo}/issues/${number}/comments`, params(req))
       .then(comments => res.json(comments))
-      .catch(err => {
-        monitor.error(err);
-        res.status(404).send(`Cannot GET ${req.url}`);
-        return next()
-      });
-  });
-
-router.route('/repos/:owner/:repo/labels')
-  .get((req, res, next) => {
-    const { repo, owner } = full_name(req);
-    security(req, res);
-    gh.get(`/repos/${owner}/${repo}/labels`, params(req))
-      .then(labels => res.json(labels))
       .catch(err => {
         monitor.error(err);
         res.status(404).send(`Cannot GET ${req.url}`);
