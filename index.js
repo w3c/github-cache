@@ -96,7 +96,7 @@ router.all("/v3/*", (req, res, next) => {
 
 router.route('/v3/orgs/:owner/repos')
   .get((req, res, next) => {
-    const {owner} = req;
+    const { owner } = req;
     gh.get(`/orgs/${owner}/repos`, params(req))
       .then(conf => resJson(req, res, conf))
       .catch(err => defaultError(req, res, next, err));
@@ -104,7 +104,7 @@ router.route('/v3/orgs/:owner/repos')
 
 router.route('/v3/repos/:owner/:repo')
   .get((req, res, next) => {
-    const {repo, owner} = req;
+    const { repo, owner } = req;
     gh.get(`/repos/${owner}/${repo}`, params(req))
       .then(conf => resJson(req, res, conf))
       .catch(err => defaultError(req, res, next, err));
@@ -113,7 +113,7 @@ router.route('/v3/repos/:owner/:repo')
 async function gh_route(path) {
   router.route(`/v3/repos/:owner/:repo/${path}`)
     .get((req, res, next) => {
-      const {repo, owner} = req;
+      const { repo, owner } = req;
       gh.get(`/repos/${owner}/${repo}/${path}`, params(req))
         .then(data => resJson(req, res, data))
         .catch(err => defaultError(req, res, next, err));
@@ -130,11 +130,23 @@ gh_route('commits');
 // gh_route('community/code_of_conduct');
 // gh_route('projects');
 
+function compareIssues(a, b) {
+  if (a.number > b.number) {
+    return -1;
+  }
+  if (a.number < b.number) {
+    return 1;
+  }
+  // a must be equal to b
+  return 0;
+}
+
 router.route('/v3/repos/:owner/:repo/issues')
   .get((req, res, next) => {
-    const {repo, owner} = req;
+    const { repo, owner } = req;
     const state = req.query.state;
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
+      .then(issues => issues.sort(compareIssues))
       .then(issues => {
         if (state === "all" || !state) {
           return issues;
@@ -146,9 +158,10 @@ router.route('/v3/repos/:owner/:repo/issues')
       .catch(err => defaultError(req, res, next, err));
   });
 
+
 router.route('/v3/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
-    const {repo, owner} = req;
+    const { repo, owner } = req;
     const number = req.params.number;
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
       .then(issues => issues.filter(issue => issue.number == number)[0])
@@ -166,7 +179,7 @@ router.route('/v3/repos/:owner/:repo/issues/:number')
 
 router.route('/v3/repos/:owner/:repo/issues/:number/comments')
   .get((req, res, next) => {
-    const {repo, owner} = req;
+    const { repo, owner } = req;
     const number = req.params.number;
     gh.get(`/repos/${owner}/${repo}/issues/${number}/comments`, params(req))
       .then(comments => resJson(req, res, comments))
