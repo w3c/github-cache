@@ -14,7 +14,7 @@ const app = express();
 
 app.enable('trust proxy');
 
-monitor.setName("GitHub handler", config);
+monitor.setName("GitHub cache", config);
 monitor.install(app);
 
 app.use(compression());

@@ -91,7 +91,7 @@ router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
     const { owner } = req;
     gh.get(`/orgs/${owner}/repos`, params(req))
-      .then(conf => resJson(req, res, conf))
+      .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
 
