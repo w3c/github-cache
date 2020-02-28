@@ -6,6 +6,7 @@ const t0 = Date.now();
 
 const config = require("./config.json");
 const express = require("express");
+const compression = require("compression");
 const monitor = require('./lib/monitor.js');
 const gh = require("./lib/octokit-cache.js");
 
@@ -16,6 +17,8 @@ app.enable('trust proxy');
 
 monitor.setName("GitHub handler", config);
 monitor.install(app);
+
+app.use(compression());
 
 function defaultError(req, res, next, err) {
   monitor.error(err);

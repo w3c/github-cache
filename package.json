@@ -16,6 +16,7 @@
     "@octokit/core": "2.*.*",
     "@octokit/plugin-throttling": "2.*.*",
     "body-parser": "1.*.*",
+    "compression": "1.*.*",
     "express": "4.*.*"
   },
   "devDependencies": {
