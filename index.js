@@ -148,7 +148,10 @@ router.route('/v3/repos/:owner/:repo/issues')
     gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
       .then(issues => issues.sort(compareIssues))
       .then(issues => {
-        if (state === "all" || !state) {
+        if (!state) {
+          state = "open";
+        }
+        if (state === "all") {
           return issues;
         } else {
           return issues.filter(i => i.state === state);
