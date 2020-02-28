@@ -42,7 +42,7 @@ function full_name(req) {
     "w3cping"
   ];
   if (!OWNERS.includes(req.params.owner.toLowerCase())) {
-    monitor.error("Unauthorized owner access " + req.params.owner);
+    monitor.error("Unexpected owner access " + req.params.owner);
   }
   return { owner: req.params.owner, repo: req.params.repo };
 }
