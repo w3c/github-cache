@@ -6,17 +6,18 @@ const t0 = Date.now();
 
 const config = require("./config.json");
 const express = require("express");
-// const cors = require("cors");
 const monitor = require('./lib/monitor.js');
+const gh = require("./lib/octokit-cache.js");
+
 const app = express();
 const router = express.Router();
-const gh = require("./lib/octokit-cache.js");
 
 app.enable('trust proxy');
 
 monitor.setName("GitHub handler");
 monitor.install(app);
 
+// filter the req.query to isolate ttl
 function params(req) {
   let params = {};
   if (req.query.ttl) {
@@ -28,7 +29,7 @@ function params(req) {
   return params;
 }
 
-// we only authorize some owners
+// should we only authorize some owners?
 function full_name(req) {
   const OWNERS = [
     "w3c",
@@ -47,6 +48,7 @@ function full_name(req) {
   return { owner: req.params.owner, repo: req.params.repo };
 }
 
+// CORS
 const ALLOW_ORIGINS = config.allowOrigin || ["http://localhost:8080"];
 function security(req, res) {
   let origin = req.headers.origin;
