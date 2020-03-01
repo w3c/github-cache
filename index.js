@@ -4,7 +4,7 @@
 
 const t0 = Date.now();
 
-const config = require("./config.json");
+const config = require("./lib/config.js");
 const express = require("express");
 const compression = require("compression");
 const monitor = require('./lib/monitor.js');

@@ -2,7 +2,7 @@
 
 "use strict";
 
-const config = require("./config.json");
+const config = require("./lib/config.js");
 const express = require("express");
 const monitor = require('./lib/monitor.js');
 const gh = require("./lib/octokit-cache.js");
@@ -11,12 +11,13 @@ const router = express.Router();
 
 function defaultError(req, res, next, err) {
   monitor.error(err);
+  res.sendServerTiming();
   res.status(404).send(`Cannot GET ${req.url}`);
   return next()
 }
 
 // filter object properties
-function resJson(req, res, objs) {
+function resJson(req, res, data) {
   let fields = req.query.fields;
   function skim(obj) {
     const newobj = {};
@@ -29,45 +30,25 @@ function resJson(req, res, objs) {
   }
   let retObj;
   if (!fields) {
-    retObj = objs;
+    retObj = data;
   } else {
     fields = fields.split(',');
-    retObj = (Array.isArray(objs)) ? objs.map(skim) : skim(objs);
+    retObj = (Array.isArray(data)) ? data.map(skim) : skim(data);
   }
+  res.sendServerTiming();
   res.json(retObj);
 }
 
 // Our various routes
 
-// filter the req.query to isolate ttl
-function params(req) {
-  const params = {};
-  if (req.query.ttl) {
-    const ttl = Number.parseInt(req.query.ttl);
-    if (ttl > -2 && ttl < 1440) {
-      params.ttl = ttl;
-    }
-  }
-  return params;
-}
-
 router.param('repo', (req, res, next, repo) => {
+  // do we need more input checks here?
   req.repo = repo;
   next();
 });
 router.param('owner', (req, res, next, owner) => {
-  const OWNERS = [
-    "w3c",
-    "w3ctag",
-    "webassembly",
-    "immersive-web",
-    "wicg",
-    "whatwg",
-    "webaudio",
-    "web-platform-tests",
-    "w3cping"
-  ];
-  if (!OWNERS.includes(owner.toLowerCase())) {
+  // do we need more input checks here?
+  if (!config.owners.includes(owner.toLowerCase())) {
     monitor.error("Unexpected owner access " + owner);
   }
   req.owner = owner;
@@ -76,21 +57,29 @@ router.param('owner', (req, res, next, owner) => {
 
 // CORS
 router.all("/*", (req, res, next) => {
-  const ALLOW_ORIGINS = config.allowOrigins || ["http://localhost:8080"];
+  req.startTime = Date.now();
   let origin = req.headers.origin;
-  if (!ALLOW_ORIGINS.includes(origin)) {
+  if (!config.allowOrigins.includes(origin)) {
     origin = "origin-denied"; // denied, invalid origin
   }
   res.set("Access-Control-Allow-Origin", origin);
   res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.set('Access-Control-Request-Headers', 'Server-Timing');
   res.set('Timing-Allow-Origin', origin);
+
+  if (req.query.ttl) {
+    const ttl = Number.parseInt(req.query.ttl);
+    if (ttl > -2 && ttl < 1440) {
+      req.ttl = ttl;
+    }
+  }
   return next();
 });
 
 router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
     const { owner } = req;
-    gh.get(`/orgs/${owner}/repos`, params(req))
+    gh.get(req, res, `/orgs/${owner}/repos`)
       .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
@@ -98,13 +87,13 @@ router.route('/orgs/:owner/repos')
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const { repo, owner } = req;
-    gh.get(`/orgs/${owner}/repos`, params(req))
-      .then(repos => {
-        const rep = repos.filter(r => r.name === repo)[0];
-        if (!rep) throw new Error(`repository not found ${owner}/${repo}`);
-        return rep;
+    gh.get(req, res, `/orgs/${owner}/repos`)
+      .then(data => {
+        data = data.filter(r => r.name === repo)[0];
+        if (!data) throw new Error(`repository not found ${owner}/${repo}`);
+        return data;
       })
-      .then(conf => resJson(req, res, conf))
+      .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
 
@@ -112,7 +101,7 @@ async function gh_route(path) {
   router.route(`/repos/:owner/:repo/${path}`)
     .get((req, res, next) => {
       const { repo, owner } = req;
-      gh.get(`/repos/${owner}/${repo}/${path}`, params(req))
+      gh.get(req, res, `/repos/${owner}/${repo}/${path}`)
         .then(data => resJson(req, res, data))
         .catch(err => defaultError(req, res, next, err));
     });
@@ -143,19 +132,18 @@ router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const { repo, owner } = req;
     let state = req.query.state;
-    gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
-      .then(issues => issues.sort(compareIssues))
-      .then(issues => {
+    gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
+      .then(data => {
+        data = data.sort(compareIssues)
         if (!state) {
           state = "open";
         }
-        if (state === "all") {
-          return issues;
-        } else {
-          return issues.filter(i => i.state === state);
+        if (state !== "all") {
+          data = data.filter(i => i.state === state);
         }
+        return data;
       })
-      .then(issues => resJson(req, res, issues))
+      .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
 
@@ -164,14 +152,14 @@ router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
     const { repo, owner } = req;
     const number = req.params.number;
-    gh.get(`/repos/${owner}/${repo}/issues?state=all`, params(req))
-      .then(issues => issues.filter(issue => issue.number == number)[0])
-      .then(issue => {
-        if (!issue) {
+    gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
+      .then(data => {
+        data = data.filter(issue => issue.number == number)[0];
+        if (!data) {
           monitor.warn(`${owner}/${repo}/issues/${number} doesn't exist`);
           res.status(404).send(`Cannot GET ${req.url}`);
         } else {
-          resJson(req, res, issue);
+          resJson(req, res, data);
         }
         return next();
       })
@@ -182,8 +170,8 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
   .get((req, res, next) => {
     const { repo, owner } = req;
     const number = req.params.number;
-    gh.get(`/repos/${owner}/${repo}/issues/${number}/comments`, params(req))
-      .then(comments => resJson(req, res, comments))
+    gh.get(req, res, `/repos/${owner}/${repo}/issues/${number}/comments`)
+      .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
 

@@ -2,8 +2,12 @@
   "ghToken": "give-me-a-proper-token-from-github",
   "port": 5000,
   "cache": "cache",
+  "owners": [
+    "w3c", "w3ctag", "webassembly", "immersive-web", "wicg", "whatwg", "webaudio", "web-platform-tests", "w3cping"
+  ],
   "allowOrigins": [
     "https://www.w3.org",
-    "https://w3c.github.io"
+    "https://labs.w3.org",
+    "http://localhost:8080"
   ]
 }
