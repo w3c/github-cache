@@ -21,6 +21,8 @@ app.use(compression());
 
 app.use("/v3", v3);
 
+app.use("/doc", express.static("docs"));
+
 const port = config.port || 5000;
 const server = app.listen(port, () => {
   console.log("Server started in", (Date.now() - t0) + "ms.\n");

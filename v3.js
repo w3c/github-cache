@@ -11,8 +11,13 @@ const router = express.Router();
 
 function defaultError(req, res, next, err) {
   monitor.error(err);
+  const status = err.status || 404;
+  res.status(status);
+  if (err.status === 301 || err.status === 302 || err.status === 307) {
+    res.set("Location", err.headers.location);
+  }
   res.sendServerTiming();
-  res.status(404).send(`Cannot GET ${req.url}`);
+  res.send(`Cannot GET ${req.url}`);
   return next()
 }
 

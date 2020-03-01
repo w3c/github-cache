@@ -1,0 +1,130 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tester</title>
+  <style>
+    div.oops h3 {
+      color: red;
+    }
+    #log h3 {
+      margin-bottom: 0;
+    }
+    #log p {
+      margin: 0; padding: 0; margin-left: 1em;
+    }
+    div.github p.durs {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cache Tester</h1>
+  <section id='log'>
+  </section>
+  <script>
+  let CACHE = "http://localhost:5000";
+  CACHE = "https://labs.w3.org/github-cache";
+
+  // install the beacons observer
+  const rtObserver = new PerformanceObserver(list => {
+    const beacons = list.getEntries().filter(entry => entry.name.startsWith(CACHE + '/v3'));
+    if (beacons.length > 0) {
+      navigator.sendBeacon(`${CACHE}/monitor/beacon`, JSON.stringify(beacons));
+    }
+   });
+   rtObserver.observe({entryTypes: ["resource"]});
+
+   function test(url, expectedStatus, key, value) {
+    let rt;
+    let content;
+    let status = "http500";
+    const urlObserver = new PerformanceObserver(list => {
+      list.getEntries().forEach(entry => {
+        if (entry.name.endsWith(url)) {
+          rt = entry;
+          urlObserver.disconnect();
+        }
+      });
+      if (content) {
+        display();
+      }
+    });
+    urlObserver.observe({entryTypes: ["resource"]});
+    function display () {
+      rt.content = content;
+      console.log(rt);
+      const log = document.getElementById('log');
+      const div = document.createElement("div");
+      if (status !== expectedStatus) {
+        div.className = "oops";
+      }
+      const h3 = document.createElement("h3");
+      h3.textContent = rt.name;
+      div.appendChild(h3);
+      const p = document.createElement("p");
+      let text = `${Math.round(rt.duration)}ms`;
+      p.classList.add('durs');
+      if (rt.duration > 1000) {
+        div.classList.add('duration');
+      }
+      rt.serverTiming.forEach(entry => {
+        if (entry.name==="github" && entry.duration > 0) {
+          div.classList.add(entry.name);
+        }
+        text += `, ${entry.name}=${entry.duration}`
+      })
+      p.textContent = text;
+      div.appendChild(p);
+      const pre = document.createElement("p");
+      pre.textContent = content;
+      div.appendChild(pre);
+      log.insertBefore(div, log.firstElementChild);
+    }
+    fetch(`${CACHE}/v3${url}`)
+      .then(response => {
+        status = "http" + response.status;
+        if (response.ok) {
+          status = "http200";
+          return response.json().then((data => {
+            if (!key) return ("" + data).substring(0, 80);
+            if (data[key] === value
+                || (Array.isArray(data)
+                   && data.reduce((v, a) => v[key] === value && a, true))) {
+              return `data[${key}] = ${data[key]}`;
+            } else {
+              return `unexpected object : data[${key}] : ${value} !== ${data[key]}`
+            }
+          }));
+        }
+        return response.text().then(text => response.status + " " + text);
+      })
+      // .catch(obj => obj.message)
+      .then(text => {
+        content = text;
+        if (rt) display();
+      });
+  }
+  test("/orgs/w3c/repos?fields=html_url", "http200");
+  test("/repos/w3c/hr-time", "http200", "html_url", "https://github.com/w3c/hr-time");
+  test("/repos/whatwg/html?ttl=0", "http200", "html_url", "https://github.com/whatwg/html");
+  test("/repos/w3c/user-timing/issues", "http200", "full_name", "w3c/user_timing");
+  test("/repos/w3c/a11y-review/labels", "http200");
+  test("/repos/w3c/performance-timeline/teams?ttl=0", "http200");
+  test("/repos/w3c/magnetometer/hooks", "http200");
+  test("/repos/w3c/wcag/license", "http200");
+  test("/repos/w3c/dxwg/contents/w3c.json?ttl=1", "http200");
+  test("/repos/w3c/ttml2/branches", "http200");
+  test("/repos/w3c/magnetometer/commits", "http200");
+  test("/repos/w3c/user-timing/issues/23", "http200");
+  test("/repos/w3c/user-timing/issues/23/comments", "http200");
+  test("/repos/w3c/AB-memberonly", "http404");
+  fetch("https://w3c.github.io/hr-labels.json").then(res => res.json()).then(entries => {
+    const s = new Set();
+    entries.forEach(e => s.add(e.repo));
+    return s.forEach(r => test(`/repos/${r}?ttl=15`, `http200`, `html_url`, `https://github.com/${r}`));
+  })
+
+</script>
+</body>
+</html>
