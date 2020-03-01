@@ -4,33 +4,39 @@ A simple cache for GitHub
 
 Use npm start
 
-The server exposes the following routes:
+The server exposes the following routes from GitHub:
 
-- `/orgs/:owner/repos`
-- `/repos/:owner/:repo`
-- `/repos/:owner/:repo/labels`
-- `/repos/:owner/:repo/teams`
-- `/repos/:owner/:repo/hooks`
-- `/repos/:owner/:repo/license`
-- `/repos/:owner/:repo/contents/w3c.json`
-- `/repos/:owner/:repo/branches`
-- `/repos/:owner/:repo/commits`
-- `/repos/:owner/:repo/issues`
-- `/repos/:owner/:repo/issues/:number`
-- `/repos/:owner/:repo/issues/:number/comments`
+- `/v3/orgs/:owner/repos`
+- `/v3/repos/:owner/:repo`
+- `/v3/repos/:owner/:repo/labels`
+- `/v3/repos/:owner/:repo/teams`
+- `/v3/repos/:owner/:repo/hooks`
+- `/v3/repos/:owner/:repo/license`
+- `/v3/repos/:owner/:repo/contents/w3c.json`
+- `/v3/repos/:owner/:repo/branches`
+- `/v3/repos/:owner/:repo/commits`
+- `/v3/repos/:owner/:repo/issues`
+- `/v3/repos/:owner/:repo/issues/:number`
+- `/v3/repos/:owner/:repo/issues/:number/comments`
 
 For each route, you may use th following optional parameters:
 
 - `ttl` : a number representing the minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names
 
+The server also exposes the following "macro" routes:
+
+- `/v3/w3c/:id`
+
+Macro routes take times when a refresh is needed, so you might get a timed out the first time you call it. Try again after 5 minutes. Those routes are only updated once per day...
+
 By default, the ttl is 6 hours.
 
 For example:
 
-    http://localhost:5000/repos/w3c/hr-time
-    http://localhost:5000/repos/w3c/hr-time?ttl=60
-    http://localhost:5000/repos/w3c/hr-time/issues?fields=number,created_at,labels
+    http://localhost:5000/v3/repos/w3c/hr-time
+    http://localhost:5000/v3/repos/w3c/hr-time?ttl=60
+    http://localhost:5000/v3/repos/w3c/hr-time/issues?fields=number,created_at,labels
 
 Make sure to set up config.json properly, including the CORS allowed origins.
 

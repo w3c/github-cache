@@ -85,6 +85,53 @@ router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
     const { owner } = req;
     gh.get(req, res, `/orgs/${owner}/repos`)
+      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
+      .then(data => resJson(req, res, data))
+      .catch(err => defaultError(req, res, next, err));
+  });
+
+async function allW3CJson(req, res, repositories, id) {
+  const all = [];
+  const specialOwners = ["whatwg", "web-platform-tests", "w3ctag", "w3cping", "WICG"];
+  const specialIds = ["whatwg", "web-platform-tests", 34270, 52497, 80485];
+  const knownRepositories = repositories.filter(repo => !specialOwners.includes(repo.owner.login));
+  req.ttl = 1440; // prevent aggressive ttl
+  for (const repo of knownRepositories) {
+    try {
+      let conf = (await gh.get(req, res, `/repos/${repo.full_name}/contents/w3c.json`))[0];
+      if (conf) {
+        conf = JSON.parse(Buffer.from(conf.content, conf.encoding).toString());
+        if (conf.group &&
+           (conf.group == id
+            || (Array.isArray(conf.group) && conf.group.find(g => g == id)))) {
+          conf.repository = repo.full_name;
+          all.push(conf);
+        }
+      }
+    } catch (e) {
+      //ignore
+    }
+  }
+  specialOwners.forEach((owner, idx) => {
+    repositories.filter(repo => repo.owner.login === owner).forEach(repo => {
+      if (specialIds[idx] === id) {
+        all.push({group: specialIds[idx], repository: repo.full_name});
+      }
+    })
+  })
+  return all;
+}
+
+router.route('/w3c/:id')
+  .get((req, res, next) => {
+    const id = req.params.id.match(/[0-9]+/g);
+    if (!id) {
+      throw new Error("invalid id");
+    }
+    const promises = config.owners.map(owner => gh.get(req, res, `/orgs/${owner}/repos`));
+    Promise.all(promises).then(results => results.flat())
+      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
+      .then(repos => allW3CJson(req, res, repos, id))
       .then(data => resJson(req, res, data))
       .catch(err => defaultError(req, res, next, err));
   });
@@ -93,6 +140,7 @@ router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const { repo, owner } = req;
     gh.get(req, res, `/orgs/${owner}/repos`)
+      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
       .then(data => {
         data = data.filter(r => r.name === repo)[0];
         if (!data) throw new Error(`repository not found ${owner}/${repo}`);
