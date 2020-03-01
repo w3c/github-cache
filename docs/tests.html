@@ -23,8 +23,8 @@
   <section id='log'>
   </section>
   <script>
-  let CACHE = "http://localhost:5000";
-  CACHE = "https://labs.w3.org/github-cache";
+  let CACHE = "http://localhost:8080";
+      CACHE = "https://labs.w3.org/github-cache";
 
   // install the beacons observer
   const rtObserver = new PerformanceObserver(list => {
@@ -37,6 +37,7 @@
 
    function test(url, expectedStatus, key, value) {
     let rt;
+    let resObject;
     let content;
     let status = "http500";
     const urlObserver = new PerformanceObserver(list => {
@@ -52,7 +53,7 @@
     });
     urlObserver.observe({entryTypes: ["resource"]});
     function display () {
-      rt.content = content;
+      if (resObject) rt.response_object = resObject;
       console.log(rt);
       const log = document.getElementById('log');
       const div = document.createElement("div");
@@ -87,12 +88,14 @@
         if (response.ok) {
           status = "http200";
           return response.json().then((data => {
+            resObject = data;
             if (!key) return ("" + data).substring(0, 80);
             if (data[key] === value
                 || (Array.isArray(data)
-                   && data.reduce((v, a) => v[key] === value && a, true))) {
-              return `data[${key}] = ${data[key]}`;
+                   && data.reduce((a, v) => v[key] === value && a, true))) {
+              return `${key} = ${value}`;
             } else {
+              status = "oops";
               return `unexpected object : data[${key}] : ${value} !== ${data[key]}`
             }
           }));
@@ -105,18 +108,22 @@
         if (rt) display();
       });
   }
-  test("/orgs/w3c/repos?fields=html_url", "http200");
-  test("/repos/w3c/hr-time", "http200", "html_url", "https://github.com/w3c/hr-time");
+  test("/orgs/w3c/repos?fields=private", "http200", "private", false);
+  test("/repos/w3c/webauthn", "http200", "html_url", "https://github.com/w3c/webauthn");
+  test("/repos/w3c/hr-time?fields=html_url", "http200", "html_url", "https://github.com/w3c/hr-time");
   test("/repos/whatwg/html?ttl=0", "http200", "html_url", "https://github.com/whatwg/html");
-  test("/repos/w3c/user-timing/issues", "http200", "full_name", "w3c/user_timing");
+  test("/repos/w3c/user-timing/issues", "http200", "repository_url", "https://api.github.com/repos/w3c/user-timing");
   test("/repos/w3c/a11y-review/labels", "http200");
-  test("/repos/w3c/performance-timeline/teams?ttl=0", "http200");
-  test("/repos/w3c/magnetometer/hooks", "http200");
-  test("/repos/w3c/wcag/license", "http200");
+  test("/repos/w3c/performance-timeline/teams?ttl=0", "http200", "privacy", "closed");
+  test("/repos/immersive-web/webxr/teams", "http200", "privacy", "closed");
+  test("/repos/w3cping/tracking-issues/teams", "http200", "privacy", "closed");
+  test("/repos/web-platform-tests/wpt/teams", "http200", "privacy", "closed");
+  test("/repos/w3c/magnetometer/hooks", "http200", "name", "web");
+  test("/repos/w3c/wcag/license", "http200", "name", "LICENSE.md");
   test("/repos/w3c/dxwg/contents/w3c.json?ttl=1", "http200");
   test("/repos/w3c/ttml2/branches", "http200");
   test("/repos/w3c/magnetometer/commits", "http200");
-  test("/repos/w3c/user-timing/issues/23", "http200");
+  test("/repos/w3c/user-timing/issues/23", "http200", "events_url", "https://api.github.com/repos/w3c/user-timing/issues/23/events");
   test("/repos/w3c/user-timing/issues/23/comments", "http200");
   test("/repos/w3c/AB-memberonly", "http404");
   fetch("https://w3c.github.io/hr-labels.json").then(res => res.json()).then(entries => {
