@@ -114,7 +114,7 @@ async function allW3CJson(req, res, repositories, id) {
   }
   specialOwners.forEach((owner, idx) => {
     repositories.filter(repo => repo.owner.login === owner).forEach(repo => {
-      if (specialIds[idx] === id) {
+      if (specialIds[idx] == id) {
         all.push({group: specialIds[idx], repository: repo.full_name});
       }
     })
