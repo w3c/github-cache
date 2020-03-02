@@ -67,3 +67,17 @@ get = async function(query_url, options) {
   });
 }
 ```
+
+The service allows for performance reporting, including [server timing](https://w3c.github.io/server-timing/).
+
+```js
+// telemetry for performance monitoring
+const traceId = (""+Math.random()).substring(2, 18); // for resource correlation
+const rtObserver = new PerformanceObserver(list => {
+  const resources = list.getEntries().filter(entry => entry.name.startsWith(CACHE + '/v3/repos'));
+  if (resources.length > 0) {
+    navigator.sendBeacon(`${CACHE}/monitor/beacon`, JSON.stringify({ traceId, resources }));
+  }
+});
+rtObserver.observe({entryTypes: ["resource"]});
+```
