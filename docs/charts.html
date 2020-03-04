@@ -188,30 +188,30 @@ function svgElement(name, attrs, ...content) {
           shape.appendChild(svgElement("rect", {class: 'duration',
             width: c(rt.duration),
             x: 0,
-            height: barWidth, y: 0}));
+            height: barWidth+6, y: 0}));
           if (rt.domainLookupStart) {
             shape.appendChild(svgElement("rect", {class: 'domainLookup',
               width: c(rt.domainLookupEnd-rt.domainLookupStart),
               x: c(rt.domainLookupStart-rt.startTime),
-              height: barWidth, y: 0}));
+              height: barWidth, y: 3}));
           }
           if (rt.connectStart) {
             shape.appendChild(svgElement("rect", {class: 'connect',
               width: c(rt.connectEnd-rt.connectStart),
               x: c(rt.connectStart-rt.startTime),
-              height: barWidth, y: 0}));
+              height: barWidth, y: 3}));
           }
           if (rt.requestStart) {
             shape.appendChild(svgElement("rect", {class: 'request',
               width: c(rt.duration-(rt.requestStart-rt.startTime)),
               x: c(rt.requestStart-rt.startTime),
-              height: barWidth, y: 0}));
+              height: barWidth, y: 3}));
           }
           if (rt.responseStart) {
             shape.appendChild(svgElement("rect", {class: 'response',
               width: c(rt.duration-(rt.responseStart-rt.startTime)),
               x: c(rt.responseStart-rt.startTime),
-              height: barWidth, y: 0}));
+              height: barWidth, y: 3}));
           }
           if (rt.serverTiming && rt.serverTiming.length > 0) {
             const sts = {};
@@ -225,11 +225,11 @@ function svgElement(name, attrs, ...content) {
             shape.appendChild(svgElement("rect", {class: 'monitor',
               width: c(sts.monitor),
               x: c(((resDur-sts.monitor)/2)+rt.requestStart-rt.startTime),
-              height: barWidth/2, y: barWidth/4}));
+              height: barWidth/2, y: barWidth/4 + 3}));
             shape.appendChild(svgElement("rect", {class: 'github',
               width: c(sts.github),
               x: c(((resDur-sts.github)/2)+rt.requestStart-rt.startTime),
-              height: barWidth/2, y: barWidth/4}));
+              height: barWidth/2, y: barWidth/4 + 3}));
           }
         }
         chart.appendChild(section);
