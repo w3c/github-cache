@@ -139,6 +139,7 @@ function svgElement(name, attrs, ...content) {
       const st = document.getElementById('stats');
       st.appendChild(htmlElement("span", `Status: ${usage.status}, `));
       st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime))}s, `));
+      st.appendChild(htmlElement("span", `RSS: ${Math.floor(usage.rss/1000000)}Mb, `));
       st.appendChild(htmlElement("span", `Requests: ${usage.requests.total}, `));
       st.appendChild(htmlElement("span", `Errors: ${usage.requests.errors}, `));
    //   st.appendChild(htmlElement("span", `Github requests: ${usage.requests.timings.github.number}, `));
