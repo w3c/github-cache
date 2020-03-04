@@ -177,8 +177,6 @@ function svgElement(name, attrs, ...content) {
       for (const key in urls) {
         const beacon = urls[key];
         let pretty = key;
-        pretty = pretty.replace('https://labs.w3.org/github-cache/', '[cache]');
-        pretty = pretty.replace('https://api.github.com/', '[github]');
         const section = htmlElement("section", {id:`entry${nb_entries++}`, style: 'width:100%'}, htmlElement("h2", pretty));
         for (const rt of beacon) {
           const c = (n) => (n/max)*barLength;
