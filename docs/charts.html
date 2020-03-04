@@ -127,7 +127,7 @@ function svgElement(name, attrs, ...content) {
       return new Intl.NumberFormat().format(n);
     }
     async function stats() {
-      const usage = await fetch("/monitor/usage").then(res => res.json());
+      const usage = await fetch("./monitor/usage").then(res => res.json());
       const st = document.getElementById('stats');
       st.appendChild(htmlElement("span", `Status: ${usage.status}, `));
       st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime))}s, `));
@@ -138,7 +138,7 @@ function svgElement(name, attrs, ...content) {
       st.appendChild(htmlElement("span", `GitHub Low Rate: ${usage.GitHub.minimumRemaining}.`));
     }
     async function beacons() {
-      const beacons = await fetch("/monitor/beacon").then(res => res.json());
+      const beacons = await fetch("./monitor/beacon").then(res => res.json());
       const urls = {};
 
       for (const beacon of beacons) {
