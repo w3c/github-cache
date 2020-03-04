@@ -181,7 +181,7 @@ function svgElement(name, attrs, ...content) {
         const section = htmlElement("section", {id:`entry${nb_entries++}`, style: 'width:100%'}, htmlElement("h2", pretty));
         for (const rt of beacon) {
           const c = (n) => (n/max)*barLength;
-          const svg = svgElement("svg", {width: barLength, height: barWidth}, svgElement('g'));
+          const svg = svgElement("svg", {width: barLength, height: barWidth+6}, svgElement('g'));
           section.appendChild(svg);
           let shape = svg.firstElementChild;
 
