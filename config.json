@@ -3,7 +3,16 @@
   "port": 5000,
   "cache": "cache",
   "owners": [
-    "w3c", "w3ctag", "webassembly", "immersive-web", "wicg", "whatwg", "webaudio", "web-platform-tests", "w3cping"
+    {"login": "w3c" },
+    {"login": "w3ctag", "gid": 34270 },
+    {"login": "webassembly" },
+    {"login": "immersive-web" },
+    {"login": "wicg", "gid": 80485 },
+    {"login": "whatwg", "gid": "whatwg" },
+    {"login": "webaudio" },
+    {"login": "web-platform-tests", "gid": "web-platform-tests"},
+    {"login": "w3cping", "gid": 52497 },
+    {"login": "privacycg", "gid": 120428 }
   ],
   "allowOrigins": [
     "https://www.w3.org",

@@ -9,6 +9,7 @@ const express = require("express");
 const compression = require("compression");
 const monitor = require('./lib/monitor.js');
 const v3 = require("./v3.js");
+const extra = require("./extra.js");
 
 const app = express();
 
@@ -20,6 +21,7 @@ monitor.install(app);
 app.use(compression());
 
 app.use("/v3", v3);
+app.use("/extra", extra);
 
 app.use("/doc", express.static("docs"));
 

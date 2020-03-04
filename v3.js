@@ -6,63 +6,24 @@ const config = require("./lib/config.js");
 const express = require("express");
 const monitor = require('./lib/monitor.js');
 const gh = require("./lib/octokit-cache.js");
+const {sendObject, sendError} = require("./lib/utils.js");
 
 const router = express.Router();
-
-function defaultError(req, res, next, err) {
-  monitor.error(err);
-  const status = err.status || 404;
-  res.status(status);
-  if (err.status === 301 || err.status === 302 || err.status === 307) {
-    res.set("Location", err.headers.location);
-  }
-  res.sendServerTiming();
-  res.send(`Cannot GET ${req.url}`);
-  return next()
-}
-
-// filter object properties
-function resJson(req, res, data) {
-  let fields = req.query.fields;
-  function skim(obj) {
-    const newobj = {};
-    for (const key in obj) {
-      if (fields.includes(key)) {
-        newobj[key] = obj[key];
-      }
-    }
-    return newobj;
-  }
-  let retObj;
-  if (!fields) {
-    retObj = data;
-  } else {
-    fields = fields.split(',');
-    retObj = (Array.isArray(data)) ? data.map(skim) : skim(data);
-  }
-  res.sendServerTiming();
-  res.json(retObj);
-}
 
 // Our various routes
 
 router.param('repo', (req, res, next, repo) => {
   // do we need more input checks here?
-  req.repo = repo;
+  req.repo = repo.substring(0, 100);
   next();
 });
 router.param('owner', (req, res, next, owner) => {
-  // do we need more input checks here?
-  if (!config.owners.includes(owner.toLowerCase())) {
-    monitor.error("Unexpected owner access " + owner);
-  }
-  req.owner = owner;
+  req.owner = owner.substring(0, 100);
   next();
 });
 
 // CORS
 router.all("/*", (req, res, next) => {
-  req.startTime = Date.now();
   let origin = req.headers.origin;
   if (!config.allowOrigins.includes(origin)) {
     origin = "origin-denied"; // denied, invalid origin
@@ -73,7 +34,7 @@ router.all("/*", (req, res, next) => {
   res.set('Timing-Allow-Origin', origin);
 
   if (req.query.ttl) {
-    const ttl = Number.parseInt(req.query.ttl);
+    const ttl = Number.parseInt(req.query.ttl.substring(0, 4));
     if (ttl > -2 && ttl < 1440) {
       req.ttl = ttl;
     }
@@ -83,80 +44,34 @@ router.all("/*", (req, res, next) => {
 
 router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
-    const { owner } = req;
-    gh.get(req, res, `/orgs/${owner}/repos`)
+    const {owner} = req;
+    gh.get(req, res, `/orgs/${owner}/repos`, {type: "public"})
       .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
-      .then(data => resJson(req, res, data))
-      .catch(err => defaultError(req, res, next, err));
-  });
-
-async function allW3CJson(req, res, repositories, id) {
-  const all = [];
-  const specialOwners = ["whatwg", "web-platform-tests", "w3ctag", "w3cping", "WICG"];
-  const specialIds = ["whatwg", "web-platform-tests", 34270, 52497, 80485];
-  const knownRepositories = repositories.filter(repo => !specialOwners.includes(repo.owner.login));
-  req.ttl = 1440; // prevent aggressive ttl
-  for (const repo of knownRepositories) {
-    try {
-      let conf = (await gh.get(req, res, `/repos/${repo.full_name}/contents/w3c.json`))[0];
-      if (conf) {
-        conf = JSON.parse(Buffer.from(conf.content, conf.encoding).toString());
-        if (conf.group &&
-           (conf.group == id
-            || (Array.isArray(conf.group) && conf.group.find(g => g == id)))) {
-          conf.repository = repo.full_name;
-          all.push(conf);
-        }
-      }
-    } catch (e) {
-      //ignore
-    }
-  }
-  specialOwners.forEach((owner, idx) => {
-    repositories.filter(repo => repo.owner.login === owner).forEach(repo => {
-      if (specialIds[idx] == id) {
-        all.push({group: specialIds[idx], repository: repo.full_name});
-      }
-    })
-  })
-  return all;
-}
-
-router.route('/w3c/:id')
-  .get((req, res, next) => {
-    const id = req.params.id.match(/[0-9]+/g);
-    if (!id) {
-      throw new Error("invalid id");
-    }
-    const promises = config.owners.map(owner => gh.get(req, res, `/orgs/${owner}/repos`));
-    Promise.all(promises).then(results => results.flat())
-      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
-      .then(repos => allW3CJson(req, res, repos, id))
-      .then(data => resJson(req, res, data))
-      .catch(err => defaultError(req, res, next, err));
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
   });
 
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
-    const { repo, owner } = req;
-    gh.get(req, res, `/orgs/${owner}/repos`)
-      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
-      .then(data => {
-        data = data.filter(r => r.name === repo)[0];
-        if (!data) throw new Error(`repository not found ${owner}/${repo}`);
-        return data;
+    const {repo, owner} = req;
+    gh.get(req, res, `/repos/${owner}/${repo}`)
+      .then(async (data) => {
+        if (data[0].archived) {
+          throw new Error(`repository not found ${owner}/${repo}`);
+        }
+        return data[0];
       })
-      .then(data => resJson(req, res, data))
-      .catch(err => defaultError(req, res, next, err));
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
   });
 
 async function gh_route(path) {
   router.route(`/repos/:owner/:repo/${path}`)
     .get((req, res, next) => {
-      const { repo, owner } = req;
+      const {repo, owner} = req;
       gh.get(req, res, `/repos/${owner}/${repo}/${path}`)
-        .then(data => resJson(req, res, data))
-        .catch(err => defaultError(req, res, next, err));
+        .then(data => sendObject(req, res, next, data))
+        .catch(err => sendError(req, res, next, err));
     });
 }
 
@@ -183,7 +98,7 @@ function compareIssues(a, b) {
 
 router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
-    const { repo, owner } = req;
+    const {repo, owner} = req;
     let state = req.query.state;
     gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
@@ -196,14 +111,14 @@ router.route('/repos/:owner/:repo/issues')
         }
         return data;
       })
-      .then(data => resJson(req, res, data))
-      .catch(err => defaultError(req, res, next, err));
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
   });
 
 
 router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
-    const { repo, owner } = req;
+    const {repo, owner} = req;
     const number = req.params.number;
     gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
@@ -212,20 +127,72 @@ router.route('/repos/:owner/:repo/issues/:number')
           monitor.warn(`${owner}/${repo}/issues/${number} doesn't exist`);
           res.status(404).send(`Cannot GET ${req.url}`);
         } else {
-          resJson(req, res, data);
+          sendObject(req, res, next, data);
         }
         return next();
       })
-      .catch(err => defaultError(req, res, next, err));
+      .catch(err => sendError(req, res, next, err));
   });
 
 router.route('/repos/:owner/:repo/issues/:number/comments')
   .get((req, res, next) => {
-    const { repo, owner } = req;
+    const {repo, owner} = req;
     const number = req.params.number;
     gh.get(req, res, `/repos/${owner}/${repo}/issues/${number}/comments`)
-      .then(data => resJson(req, res, data))
-      .catch(err => defaultError(req, res, next, err));
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
   });
+
+// those are entries that I'd like to have available with ttl of 24 hours
+
+async function refreshRepository(owner, repo) {
+  const routes = [
+    ``,
+    `/contents/w3c.json`,
+    `/labels`,
+    `/teams`,
+    `/hooks`,
+    `/license`,
+    `/branches`,
+  ];
+  const req = {ttl: 0};
+  for (const route of routes) {
+    await (gh.get(req, undefined, `/repos/${owner}/${repo}/${route}`).catch(() => "done"));
+  }
+}
+
+async function refresh() {
+  const req = {ttl: 0};
+  let repos = config.owners.map(owner => `/orgs/${owner.login}/repos`);
+  for (let index = 0; index < repos.length; index++) {
+    const repo = repos[index];
+    repos[index] = await (gh.get(req, undefined, repo).catch(() => []));
+  }
+  repos = repos.flat().filter(repo => !repo.archived);
+  if (!repos.length) {
+    monitor.error("Can't access repositories");
+    return;
+  }
+  let current = 0;
+  const per_minute = Math.ceil(repos.length / (24 * 60));
+  async function loop() {
+    for (let index = current; index < (current + per_minute); index++) {
+      const repo = repos[index];
+      await refreshRepository(repo.owner.login, repo.name);
+    }
+    current = current + per_minute;
+    if (current < repos.length) {
+      setTimeout(loop, 1000 * 60);
+    } else {
+      // start all over again
+      setTimeout(refresh, 1000 * 60);
+    }
+  }
+  monitor.log(`refreshing ${repos.length} repositories (${per_minute} per minute)`);
+  setTimeout(loop, 1000 * 60); // start working after a minute
+}
+
+refresh();
+
 
 module.exports = router;

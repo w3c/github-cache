@@ -19,18 +19,20 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/issues/:number`
 - `/v3/repos/:owner/:repo/issues/:number/comments`
 
-For each route, you may use th following optional parameters:
+The server also exposes the extra routes:
+
+- `/extra/ids/:id`
+- `/extra/repos/:owner/:repo`
+- `/extra/repos/:owner/:repo/w3c.json`
+
+For each route, you may use the following optional parameters:
 
 - `ttl` : a number representing the minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names
 
-The server also exposes the following "macro" routes:
+By default, the ttl is 6 hours for GitHub routes, and 24 hours for extra routes.
 
-- `/v3/w3c/:id`
-
-Macro routes take times when a refresh is needed, so you might get a timed out the first time you call it. Try again after 5 minutes. Those routes are only updated once per day...
-
-By default, the ttl is 6 hours.
+Extra routes take times to compute so using a ttl below 24 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
 
 For example:
 
@@ -74,7 +76,10 @@ The service allows for performance reporting, including [server timing](https://
 // telemetry for performance monitoring
 const traceId = (""+Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
-  const resources = list.getEntries().filter(entry => entry.name.startsWith(CACHE + '/v3/repos'));
+  const resources = list.getEntries().filter(entry => {
+    return (entry.name.startsWith(CACHE)
+      && !entry.name.startsWith(CACHE + '/monitor'));
+  });
   if (resources.length > 0) {
     navigator.sendBeacon(`${CACHE}/monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
