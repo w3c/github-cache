@@ -32,6 +32,8 @@ router.all("/*", (req, res, next) => {
   res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.set('Access-Control-Request-Headers', 'Server-Timing');
   res.set('Timing-Allow-Origin', origin);
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-GitHub-Media-Type', 'github.v3; format=json');
 
   if (req.query.ttl) {
     const ttl = Number.parseInt(req.query.ttl.substring(0, 4));
@@ -45,7 +47,7 @@ router.all("/*", (req, res, next) => {
 router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
     const {owner} = req;
-    gh.get(req, res, `/orgs/${owner}/repos`, {type: "public"})
+    gh.get(req, res, `/orgs/${owner}/repos`)
       .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
@@ -158,7 +160,7 @@ async function refreshRepository(owner, repo) {
   const req = {ttl: 0};
   monitor.log(`refreshing routes for ${owner}/${repo}`);
   for (const route of routes) {
-    await (gh.get(req, undefined, `/repos/${owner}/${repo}/${route}`).catch(() => "done"));
+    await (gh.get(req, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
   }
 }
 

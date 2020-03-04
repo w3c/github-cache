@@ -13,6 +13,8 @@ const extra = require("./extra.js");
 
 const app = express();
 
+app.set('x-powered-by', false);
+app.set('strict routing', true);
 app.enable('trust proxy');
 
 monitor.setName("GitHub cache", config);
