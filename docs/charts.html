@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beacons</title>
+  <title>Cache Charts</title>
   <script>
     // create an element easily
 // attrs is object (and optional)
@@ -176,7 +176,10 @@ function svgElement(name, attrs, ...content) {
       let nb_entries = 0;
       for (const key in urls) {
         const beacon = urls[key];
-        const section = htmlElement("section", {id:`entry${nb_entries++}`, style: 'width:100%'}, htmlElement("h2", key));
+        let pretty = key;
+        pretty = pretty.replace('https://labs.w3.org/github-cache/', '[cache]');
+        pretty = pretty.replace('https://api.github.com/', '[github]');
+        const section = htmlElement("section", {id:`entry${nb_entries++}`, style: 'width:100%'}, htmlElement("h2", pretty));
         for (const rt of beacon) {
           const c = (n) => (n/max)*barLength;
           const svg = svgElement("svg", {width: barLength, height: barWidth}, svgElement('g'));
