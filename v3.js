@@ -156,9 +156,7 @@ async function refreshRepository(owner, repo) {
     `/branches`,
   ];
   const req = {ttl: 0};
-  if (config.debug) {
-    monitor.log(`refreshing routes for ${owner}/${repo}`);
-  }
+  monitor.log(`refreshing routes for ${owner}/${repo}`);
   for (const route of routes) {
     await (gh.get(req, undefined, `/repos/${owner}/${repo}/${route}`).catch(() => "done"));
   }
