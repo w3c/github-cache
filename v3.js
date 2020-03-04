@@ -22,20 +22,8 @@ router.param('owner', (req, res, next, owner) => {
   next();
 });
 
-// CORS
+// TTL
 router.all("/*", (req, res, next) => {
-  let origin = req.headers.origin;
-  if (!config.allowOrigins.includes(origin)) {
-    origin = "origin-denied"; // denied, invalid origin
-  }
-  res.set("Access-Control-Allow-Origin", origin);
-  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.set('Access-Control-Request-Headers', 'Server-Timing');
-  res.set('Timing-Allow-Origin', origin);
-  res.set('X-Content-Type-Options', 'nosniff');
-  res.set('Report-To', '{"group":"monitor","max_age": 10886400,'
-    + '"endpoints": [{"url":"https://labs.w3.org/github-cache/monitor/beacon", "priority": 1 }]}');
-  res.set("Content-Security-Policy", "default-src' 'self'; report-to monitor");
   res.set('X-GitHub-Media-Type', 'github.v3; format=json');
 
   if (req.query.ttl) {

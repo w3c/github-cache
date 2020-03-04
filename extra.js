@@ -24,6 +24,19 @@ router.param('owner', (req, res, next, owner) => {
   next();
 });
 
+// TTL
+router.all("/*", (req, res, next) => {
+  res.set('X-GitHub-Media-Type', 'github.v3; format=json');
+
+  if (req.query.ttl) {
+    const ttl = Number.parseInt(req.query.ttl.substring(0, 4));
+    if (ttl > -2 && ttl < 1440) {
+      req.ttl = ttl;
+    }
+  }
+  return next();
+});
+
 async function w3cJson(req, res, owner, repo) {
   try {
     const ghObject = (await gh.get(req, res, `/repos/${owner}/${repo}/contents/w3c.json`))[0];
