@@ -33,6 +33,9 @@ router.all("/*", (req, res, next) => {
   res.set('Access-Control-Request-Headers', 'Server-Timing');
   res.set('Timing-Allow-Origin', origin);
   res.set('X-Content-Type-Options', 'nosniff');
+  res.set('Report-To', '{"group":"monitor","max_age": 10886400,'
+    + '"endpoints": [{"url":"https://labs.w3.org/github-cache/monitor/beacon", "priority": 1 }]}');
+  res.set("Content-Security-Policy", "default-src' 'self'; report-to monitor");
   res.set('X-GitHub-Media-Type', 'github.v3; format=json');
 
   if (req.query.ttl) {
