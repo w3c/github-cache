@@ -156,6 +156,9 @@ async function refreshRepository(owner, repo) {
     `/branches`,
   ];
   const req = {ttl: 0};
+  if (config.debug) {
+    monitor.log(`refreshing routes for ${owner}/${repo}`);
+  }
   for (const route of routes) {
     await (gh.get(req, undefined, `/repos/${owner}/${repo}/${route}`).catch(() => "done"));
   }
@@ -176,17 +179,19 @@ async function refresh() {
   let current = 0;
   const per_minute = Math.ceil(repos.length / (24 * 60));
   async function loop() {
-    for (let index = current; index < (current + per_minute); index++) {
-      const repo = repos[index];
-      await refreshRepository(repo.owner.login, repo.name);
-    }
-    current = current + per_minute;
-    if (current < repos.length) {
-      setTimeout(loop, 1000 * 60);
-    } else {
-      // start all over again
-      setTimeout(refresh, 1000 * 60);
-    }
+    process.nextTick(async () => {
+      for (let index = current; index < (current + per_minute); index++) {
+        const repo = repos[index];
+        await refreshRepository(repo.owner.login, repo.name);
+      }
+      current = current + per_minute;
+      if (current < repos.length) {
+        setTimeout(loop, 1000 * 60);
+      } else {
+        // start all over again
+        setTimeout(refresh, 1000 * 60);
+      }
+    });
   }
   monitor.log(`refreshing ${repos.length} repositories (${per_minute} per minute)`);
   setTimeout(loop, 1000 * 60); // start working after a minute
