@@ -81,3 +81,14 @@ const rtObserver = new PerformanceObserver(list => {
 });
 rtObserver.observe({entryTypes: ["resource"]});
 ```
+
+To visualize the metrics, visit
+
+    http://localhost:8080/doc/metrics.html
+
+## Tests
+
+Visit
+
+    http://localhost:8080/doc/tests.html
+
