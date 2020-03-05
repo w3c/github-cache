@@ -41,8 +41,8 @@ if (config.debug) {
   // install the beacons observer
 const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
-  const resources = list.getEntries().filter(entry => ((entry.name.startsWith(config.CACHE)
-      && !entry.name.startsWith(config.CACHE + '/monitor'))
+  const resources = list.getEntries().filter(entry => (entry.name.indexOf('/v3/') != -1
+    || entry.name.indexOf('/extra/') != -1
     || entry.name.startsWith("https://api.github.com/")));
   if (resources.length > 0) {
     navigator.sendBeacon(`${config.CACHE}/monitor/beacon`, JSON.stringify({ traceId, resources }));

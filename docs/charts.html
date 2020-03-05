@@ -193,17 +193,17 @@ function svgElement(name, attrs, ...content) {
             shape.appendChild(svgElement("rect", {class: 'domainLookup',
               width: c(rt.domainLookupEnd-rt.domainLookupStart),
               x: c(rt.domainLookupStart-rt.startTime),
-              height: barWidth, y: 3}));
+              height: barWidth/1.5, y: (barWidth/6)+3}));
           }
           if (rt.connectStart) {
             shape.appendChild(svgElement("rect", {class: 'connect',
               width: c(rt.connectEnd-rt.connectStart),
               x: c(rt.connectStart-rt.startTime),
-              height: barWidth, y: 3}));
+              height: barWidth/1.5, y: (barWidth/6)+3}));
           }
           if (rt.requestStart) {
             shape.appendChild(svgElement("rect", {class: 'request',
-              width: c(rt.duration-(rt.requestStart-rt.startTime)),
+              width: c((rt.responseStart-rt.requestStart)),
               x: c(rt.requestStart-rt.startTime),
               height: barWidth, y: 3}));
           }
@@ -211,7 +211,7 @@ function svgElement(name, attrs, ...content) {
             shape.appendChild(svgElement("rect", {class: 'response',
               width: c(rt.duration-(rt.responseStart-rt.startTime)),
               x: c(rt.responseStart-rt.startTime),
-              height: barWidth, y: 3}));
+              height: barWidth/1.5, y: (barWidth/6)+3}));
           }
           if (rt.serverTiming && rt.serverTiming.length > 0) {
             const sts = {};
