@@ -120,7 +120,8 @@ function svgElement(name, attrs, ...content) {
     - <span class='github'>github</span>
     - <span class='response'>response</span>
   </p>
-  <p><a style='float:right' href="https://github.com/plehegar/github-cache/">github-cache</a></p>
+  <p><a style='float:right' href="https://github.com/plehegar/github-cache/">github-cache</a>:
+    <a href='../monitor/logs'>logs</a>, <a href='../monitor/gh_logs'>gh_logs</a></p>
 </main>
   <script>
     const chart = document.getElementById("chart");
@@ -179,6 +180,7 @@ function svgElement(name, attrs, ...content) {
         let pretty = key;
         const section = htmlElement("section", {id:`entry${nb_entries++}`, style: 'width:100%'}, htmlElement("h2", pretty));
         for (const rt of beacon) {
+          if (config.debug) console.log(rt);
           const c = (n) => (n/max)*barLength;
           const svg = svgElement("svg", {width: barLength, height: barWidth+6}, svgElement('g'));
           section.appendChild(svg);
