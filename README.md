@@ -19,7 +19,7 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/issues/:number`
 - `/v3/repos/:owner/:repo/issues/:number/comments`
 
-The server also exposes the extra routes:
+The server also exposes additional routes:
 
 - `/extra/ids/:id`
 - `/extra/repos/:owner/:repo`
@@ -30,45 +30,40 @@ For each route, you may use the following optional parameters:
 - `ttl` : a number representing the minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names
 
-By default, the ttl is 6 hours for GitHub routes, and 24 hours for extra routes.
+By default, the ttl is 6 hours for GitHub routes, and 24 hours for additional routes.
 
-Extra routes take times to compute so using a ttl below 24 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
+Additional routes take times to compute so using a ttl below 24 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
+
+## Examples
 
 For example:
 
-    http://localhost:5000/v3/repos/w3c/hr-time
-    http://localhost:5000/v3/repos/w3c/hr-time?ttl=60
-    http://localhost:5000/v3/repos/w3c/hr-time/issues?fields=number,created_at,labels
+    http://localhost:8080/v3/repos/w3c/hr-time
+    http://localhost:8080/v3/repos/w3c/hr-time?ttl=60
+    http://localhost:8080/v3/repos/w3c/hr-time/issues?fields=number,created_at,labels
 
 Make sure to set up config.json properly, including the CORS allowed origins.
+
+## Sample code
 
 Example of the cache used in code:
 
 ```js
-get = async function(query_url, options) {
-  if (options && options.ttl !== undefined) {
-    if (query_url.indexOf("?") !== -1) {
-      query_url += "&";
-    } else {
-      query_url += "?";
-    }
-    query_url += "ttl=" + ttl;
-  }
-  if (options && option.fields) {
-    if (query_url.indexOf("?") !== -1) {
-      query_url += "&";
-    } else {
-      query_url += "?";
-    }
-    query_url += "fields=" + fields;
-  }
+const getFromCache = async (query_url, options) => {
+  const separator = (url) => url.indexOf("?") !== -1) ? "&" : "?";
 
-  return fetch(CACHE + query_url).then(res => {
-    if (res.ok) return res.json();
-    throw new Error("github-cache complained " + res.status);
-  });
+  for (const [key, value] of Object.entries(options)) {
+    query_url += `${separator(query_url)}${value}=${value}` : "";
+  }
+  const response = await fetch(CACHE + query_url);
+  if (response.ok) {
+    return response.json();
+  }
+  throw new Error(`github-cache complained ${res.status}`);
 }
 ```
+
+## Performance metrics
 
 The service allows for performance reporting, including [server timing](https://w3c.github.io/server-timing/).
 
@@ -78,7 +73,7 @@ const traceId = (""+Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
   const resources = list.getEntries().filter(entry => {
     return (entry.name.startsWith(CACHE)
-      && !entry.name.startsWith(CACHE + '/monitor'));
+      && !entry.name.startsWith(`${CACHE}/monitor`));
   });
   if (resources.length > 0) {
     navigator.sendBeacon(`${CACHE}/monitor/beacon`, JSON.stringify({ traceId, resources }));
