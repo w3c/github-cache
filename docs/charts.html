@@ -138,11 +138,10 @@ function svgElement(name, attrs, ...content) {
       const usage = await fetch("../monitor/usage").then(res => res.json());
       const st = document.getElementById('stats');
       st.appendChild(htmlElement("span", `Status: ${usage.status}, `));
-      st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime))}s, `));
+      st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime/60/60))} hours, `));
       st.appendChild(htmlElement("span", `RSS: ${Math.floor(usage.rss/1000000)}Mb, `));
       st.appendChild(htmlElement("span", `Requests: ${usage.requests.total}, `));
       st.appendChild(htmlElement("span", `Errors: ${usage.requests.errors}, `));
-   //   st.appendChild(htmlElement("span", `Github requests: ${usage.requests.timings.github.number}, `));
       st.appendChild(htmlElement("span", `GitHub Rate Remaining: ${usage.GitHub.rate.remaining}, `));
       st.appendChild(htmlElement("span", `GitHub Low Rate: ${usage.GitHub.minimumRemaining}.`));
     }
@@ -184,8 +183,11 @@ function svgElement(name, attrs, ...content) {
           const svg = svgElement("svg", {width: barLength, height: barWidth+6}, svgElement('g'));
           section.appendChild(svg);
           let shape = svg.firstElementChild;
-
-          shape.appendChild(svgElement("rect", {class: 'duration',
+          let className = "duration";
+          if (!rt.responseStart) {
+            className="unknown";
+          }
+          shape.appendChild(svgElement("rect", {class: className,
             width: c(rt.duration),
             x: 0,
             height: barWidth+6, y: 0}));
