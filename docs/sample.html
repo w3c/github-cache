@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample Cache</title>
+  <link rel="preconnect" href="https://labs.w3.org">
+  <link rel="preconnect" href="https://api.github.com">
+  <style>
+    #log h3 {
+      margin-bottom: 0;
+    }
+    #log p {
+      margin: 0; padding: 0; margin-left: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sample Cache</h1>
+  <p>
+    This page is comparing the cache with the api.github.com server.
+  </p>
+  <section id='log'>
+  </section>
+<p>see the <a href="metrics.html">metrics</a>.</p>
+<script>
+const config = {
+};
+
+// parse the URL to update the config
+for (const [key, value] of (new URL(window.location)).searchParams) {
+  config[key] = value;
+}
+
+const cache = (config.cache)? config.cache : `${document.location.protocol}//${document.location.host}`;
+// install the beacons observer
+const URLS = [];
+let expectedBeacons = 0;
+const collectedBeacons = [];
+const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
+const rtObserver = new PerformanceObserver(list => {
+  const slist = list.getEntries().filter(e => URLS.includes(e.name));
+  if (slist.length > 0) collectedBeacons.push(...slist);
+  if (expectedBeacons > 0 && collectedBeacons.length === expectedBeacons) {
+    rtObserver.disconnect();
+    if (sendBeacons()) {
+      log(`sending ${collectedBeacons.length} beacons`);
+    } else {
+      log(`unable to send beacons`);
+    }
+  }
+});
+
+const sendBeacons = () => {
+  const resources = collectedBeacons;
+  if (resources.length > 0) {
+
+    return navigator.sendBeacon(`${cache}/monitor/beacon`, JSON.stringify({ traceId, resources }));
+  }
+  return true;
+};
+rtObserver.observe({entryTypes: ["resource"]});
+
+const log = (html) => {
+    const p = document.createElement("p");
+    p.innerHTML = html;
+    document.getElementById('log').appendChild(p);
+  }
+
+
+const sample = (query) => {
+  log(`Compare cache and api.github.com for ${query}`);
+  const routes = [
+    `${cache}/v3${query}?ttl=0`,
+    `https://api.github.com${query}`
+  ]
+  expectedBeacons += routes.length;
+  return routes.map(route => {
+    URLS.push(route);
+    return fetch(route).then(res => res.json()).catch(err => err);
+  });
+};
+
+fetch("https://w3c.github.io/hr-labels.json").then(res => res.json()).then(entries => {
+  const s = new Set(); entries.forEach(e => s.add(e.repo));
+  const promises = [];
+  s.forEach(r => promises.push(sample(`/repos/${r}/issues`)));
+  Promise.all(promises.flat()).then(r => {
+    log(`processed ${r.length} tests`);
+  });
+  return "ok";
+})
+
+</script>
+</body>
+</html>

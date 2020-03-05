@@ -16,7 +16,6 @@
   ],
   "allowOrigins": [
     "https://www.w3.org",
-    "https://labs.w3.org",
-    "http://localhost:8080"
+    "https://labs.w3.org"
   ]
 }
