@@ -1,7 +1,7 @@
 {
   "ghToken": "give-me-a-proper-token-from-github",
-  "port": 5000,
-  "cache": "cache",
+  "port": 8080,
+  "debug": true,
   "owners": [
     {"login": "w3c" },
     {"login": "w3ctag", "gid": 34270 },
