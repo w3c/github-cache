@@ -4,7 +4,6 @@
 
 const config = require("./lib/config.js");
 const express = require("express");
-const monitor = require('./lib/monitor.js');
 const gh = require("./lib/octokit-cache.js");
 const {sendObject, sendError, decode} = require("./lib/utils.js");
 
@@ -50,7 +49,10 @@ async function w3cJson(req, res, owner, repo) {
       return w3c;
     }
   } catch (e) {
-    //ignore
+    if (e.fromGitHubCache && e.status === 304) {
+      throw e;
+    }
+    //otherwise ignore
   }
   return {};
 }
@@ -62,6 +64,9 @@ router.route('/repos/:owner/:repo/w3c.json')
       req.ttl = DEFAULT_TTL;
     }
     w3cJson(req, res, owner, repo)
+      .then(data => {
+        return data;
+      })
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });

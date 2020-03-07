@@ -158,7 +158,10 @@ async function refreshRepository(owner, repo) {
 }
 
 async function refresh() {
-  if (config.debug) return;
+  if (config.debug) {
+    // abort
+    return;
+  }
   const req = {ttl: 0};
   let repos = config.owners.map(owner => `/orgs/${owner.login}/repos`);
   for (let index = 0; index < repos.length; index++) {

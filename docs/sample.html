@@ -49,16 +49,15 @@ const rtObserver = new PerformanceObserver(list => {
     }
   }
 });
+rtObserver.observe({entryTypes: ["resource"]});
 
 const sendBeacons = () => {
   const resources = collectedBeacons;
   if (resources.length > 0) {
-
     return navigator.sendBeacon(`${cache}/monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
   return true;
 };
-rtObserver.observe({entryTypes: ["resource"]});
 
 const log = (html) => {
     const p = document.createElement("p");
@@ -70,7 +69,7 @@ const log = (html) => {
 const sample = (query) => {
   log(`Compare cache and api.github.com for ${query}`);
   const routes = [
-    `${cache}/v3${query}?ttl=0`,
+    `${cache}/v3${query}?ttl=1`,
     `https://api.github.com${query}`
   ]
   expectedBeacons += routes.length;

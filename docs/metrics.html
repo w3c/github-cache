@@ -46,17 +46,21 @@ function svgElement(name, attrs, ...content) {
     fill: darkgoldenrod;
     color: darkgoldenrod;
   }
-  .unknown {
-    fill: slategrey;
-    color: slategrey;
+  .redirect {
+    fill: darkslateblue;
+    color: darkslateblue;
+  }
+  .appcache {
+    fill: lightsalmon;
+    color: lightsalmon;
   }
   .domainLookup {
     fill: blue;
     color: blue;
   }
-  .connect {
-    fill: violet;
-    color: violet;
+  .tcp {
+    fill: cadetblue;
+    color: cadetblue;
   }
   .request {
     fill:green;
@@ -71,8 +75,12 @@ function svgElement(name, attrs, ...content) {
     color:blueviolet;
   }
   .github {
-    fill:red;
+    fill: red;
     color:red;
+  }
+  .pending {
+    fill:gold;
+    color:gold;
   }
   .read {
     fill:black;
@@ -120,6 +128,9 @@ function svgElement(name, attrs, ...content) {
     right: 1em;
     border: 1px solid black; padding: 5px;
   }
+  #info li {
+    text-shadow: 1px 1px black;
+  }
   #info p, #info ul {
     margin: 0;
   }
@@ -145,17 +156,23 @@ function svgElement(name, attrs, ...content) {
       <p>Maximum time is <span id='max'></span>.</span></p>
       <section id='info'>
       <p>Client side:
-        <ul class='keywords'><li class='duration'>fetch</li>
-        <li class='unknown'>unknown/hidden</li>
-        <li class='domainLookup'>DNS</li>
-        <li class='connect'>connection</li>
-        <li class='request'>request</li>
-        <li class='response'>response</li></ul>
+        <ul class='keywords'>
+          <li class='duration'
+          title='Total time spent by the browser to fetch the resource from the server'>client</li>
+          <li class='redirect' title='Time spent by the browsers in HTTP redirects'>redirect</li>
+        <li class='appcache' title='Time spent by the browser in its local cache'>browser cache</li>
+        <li class='domainLookup' title='Time spent by the browser in DNS resolution'>DNS</li>
+        <li class='tcp' title='Time spent by the browser in establishing the TCP connection'>TCP</li>
+        <li class='request' title='Time spent by the browser in sending the request and waiting for a response'>request</li>
+        <li class='response' title='Time spent by the browser in receiving and processing the response'>response</li></ul>
       </p>
       <p>Server side:
-        <ul class='keywords'><li class='monitor'>total</li>
-      <li class='github'>github</li>
-      <li class='read'>read</li></ul>
+        <ul class='keywords'>
+        <li class='monitor' title='Total time spent by the server to receive the request and send a response'>server</li>
+        <li class='read' title='Time spent by the server in its local cache'>read</li>
+        <li class='github' title='Time spent by the server dealing with api.github.com'>github</li>
+        <li class='pending' title='Time spent by the server waiting on a concurrent github request'>concurrent</li>
+        </ul>
       </p>
     </section>
           <svg width='1000' height='2'>
@@ -236,13 +253,45 @@ function svgElement(name, attrs, ...content) {
       return entries;
     }
 
+    function process(beacon) {
+      if (beacon.serverTiming && beacon.serverTiming.length > 0) {
+        const entries = [];
+        for (const ste of beacon.serverTiming) {
+          const name = ste.name;
+          if (name === "r") {
+            entries[0] = { name: "monitor", start: 0, end: ste.duration };
+            continue;
+          }
+          let measure = 'github';
+          const mark = (name.charAt(1) == 's') ? "start" : "end" ;
+          const num = Number.parseInt(name.match(/[0-9]+/g));
+          switch (name.charAt(0)) {
+            case 'g':
+              measure = 'github';
+              break;
+            case 'r':
+              measure = "read";
+              break;
+            case 'p':
+              measure = 'pending';
+              break;
+          }
+          if (!entries[num]) {
+            entries[num] = { name: measure }
+          }
+          entries[num][mark] = ste.duration;
+        }
+        return entries;
+      }
+    }
+
     function draw(criteria) {
       const sortedBeacons = arrange(criteria);
       const chart = document.getElementById("svgcharts");
       chart.textContent = '';
       document.getElementById('max').textContent = f(Math.ceil(max)) + 'ms';
       const barLength = 1000;
-      const barWidth = 20;
+      const barWidth = 30;
       let nb_entries = 0;
       for (const key of Object.keys(sortedBeacons).sort(algo('fetchStart'))) {
         const beacons = sortedBeacons[key];
@@ -270,16 +319,18 @@ function svgElement(name, attrs, ...content) {
             }
           }
           let className = "duration";
-          if (!rt.responseStart) {
-            className="unknown";
-          }
+          // see https://www.w3.org/TR/resource-timing/#processing-model
           shape.appendChild(svgElement("rect", {class: className,
-            width: c(rt.duration), x: 0, height: barWidth+6, y: 0}));
+            width: c(rt.responseEnd-rt.fetchStart), x: 0, height: barWidth+6, y: 0}));
+          if (rt.redirectStart) {
+            makeShape('redirect', rt.redirectStart, rt.redirectEnd, 1.5);
+          }
           if (rt.domainLookupStart) {
+            makeShape('appcache', rt.fetchStart, rt.domainLookupStart, 1.5);
             makeShape('domainLookup', rt.domainLookupStart, rt.domainLookupEnd, 1.5);
           }
           if (rt.connectStart) {
-            makeShape('connect', rt.connectStart, rt.connectEnd, 1.5);
+            makeShape('tcp', rt.connectStart, rt.connectEnd, 1.5);
           }
           if (rt.requestStart) {
             makeShape('request', rt.requestStart, rt.responseStart, 1);
@@ -287,14 +338,26 @@ function svgElement(name, attrs, ...content) {
           if (rt.responseStart) {
             makeShape('response', rt.responseStart, rt.responseEnd, 1.5);
           }
-          if (rt.serverRequestStart) {
-            makeShape('monitor', rt.serverRequestStart, rt.serverResponseEnd, 2);
-          }
-          if (rt.serverGitHubStart) {
-            makeShape('github', rt.serverGitHubStart, rt.serverGitHubEnd, 2);
-          }
-          if (rt.serverReadStart) {
-            makeShape('read', rt.serverReadStart, rt.serverReadEnd, 3);
+          const entries = process(rt);
+          if (entries) {
+            console.log(entries);
+            const gap = ((rt.responseStart - rt.requestStart - entries[0].end) / 2) + rt.requestStart;
+            entries.forEach((value, idx) => {
+              let factor, shift;
+              if (value.name == "monitor") {
+                factor = 1.5; shift = 0;
+              }
+              if (value.name == "read") {
+                factor = 2; shift = 0;
+              }
+              if (value.name == "github") {
+                factor = 3; shift = -1;
+              }
+              if (value.name == "pending") {
+                factor = 3; shift = 1;
+              }
+              makeShape(value.name, gap + value.start, gap + value.end, factor, shift);
+            });
           }
         }
         chart.appendChild(section);
