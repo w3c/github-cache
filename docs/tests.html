@@ -33,7 +33,10 @@ for (const [key, value] of (new URL(window.location)).searchParams) {
   config[key] = value;
 }
 
-const cache = (config.cache)? config.cache : `${document.location.protocol}//${document.location.host}`;
+let cache = config.cache;
+if (!config.cache) {
+  cache = (new URL(document.location.href + "/../..")).href;
+}
 
 const URLS = [];
 const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
@@ -128,33 +131,33 @@ rtObserver.observe({entryTypes: ["resource"]});
     test(url, expectedStatus, key, value);
   }
 
-  testRoute("/v3/orgs/w3c/repos?fields=private", "http200", "private", false);
-  testRoute("/v3/repos/w3c/webauthn", "http200", "html_url", "https://github.com/w3c/webauthn");
-  testRoute("/v3/repos/w3c/hr-time?fields=html_url", "http200", "html_url", "https://github.com/w3c/hr-time");
-  testRoute("/v3/repos/whatwg/html?ttl=0", "http200", "html_url", "https://github.com/whatwg/html");
-  testRoute("/v3/repos/w3c/user-timing/issues", "http200", "repository_url", "https://api.github.com/repos/w3c/user-timing");
-  testRoute("/v3/repos/w3c/a11y-review/labels", "http200");
-  testRoute("/v3/repos/w3c/performance-timeline/teams?ttl=0", "http200", "privacy", "closed");
-  testRoute("/v3/repos/immersive-web/webxr/teams", "http200", "privacy", "closed");
-  testRoute("/v3/repos/w3cping/tracking-issues/teams", "http200", "privacy", "closed");
-  testRoute("/v3/repos/web-platform-tests/wpt/teams", "http200", "privacy", "closed");
-  testRoute("/v3/repos/w3c/magnetometer/hooks", "http200", "name", "web");
-  testRoute("/v3/repos/w3c/wcag/license", "http200", "name", "LICENSE.md");
-  testRoute("/v3/repos/w3c/ttml2/branches", "http200");
-  testRoute("/v3/repos/w3c/magnetometer/commits", "http200");
-  testRoute("/v3/repos/w3c/user-timing/issues/23", "http200", "events_url", "https://api.github.com/repos/w3c/user-timing/issues/23/events");
-  testRoute("/v3/repos/w3c/user-timing/issues/23/comments", "http200");
-  testRoute("/v3/repos/w3c/AB-memberonly", "http404");
-  testRoute("/v3/repos/w3c/dxwg/contents/w3c.json?ttl=1", "http200");
+  testRoute("v3/orgs/w3c/repos?fields=private", "http200", "private", false);
+  testRoute("v3/repos/w3c/webauthn", "http200", "html_url", "https://github.com/w3c/webauthn");
+  testRoute("v3/repos/w3c/hr-time?fields=html_url", "http200", "html_url", "https://github.com/w3c/hr-time");
+  testRoute("v3/repos/whatwg/html?ttl=0", "http200", "html_url", "https://github.com/whatwg/html");
+  testRoute("v3/repos/w3c/user-timing/issues", "http200", "repository_url", "https://api.github.com/repos/w3c/user-timing");
+  testRoute("v3/repos/w3c/a11y-review/labels", "http200");
+  testRoute("v3/repos/w3c/performance-timeline/teams?ttl=0", "http200", "privacy", "closed");
+  testRoute("v3/repos/immersive-web/webxr/teams", "http200", "privacy", "closed");
+  testRoute("v3/repos/w3cping/tracking-issues/teams", "http200", "privacy", "closed");
+  testRoute("v3/repos/web-platform-tests/wpt/teams", "http200", "privacy", "closed");
+  testRoute("v3/repos/w3c/magnetometer/hooks", "http200", "name", "web");
+  testRoute("v3/repos/w3c/wcag/license", "http200", "name", "LICENSE.md");
+  testRoute("v3/repos/w3c/ttml2/branches", "http200");
+  testRoute("v3/repos/w3c/magnetometer/commits", "http200");
+  testRoute("v3/repos/w3c/user-timing/issues/23", "http200", "events_url", "https://api.github.com/repos/w3c/user-timing/issues/23/events");
+  testRoute("v3/repos/w3c/user-timing/issues/23/comments", "http200");
+  testRoute("v3/repos/w3c/AB-memberonly", "http404");
+  testRoute("v3/repos/w3c/dxwg/contents/w3c.json?ttl=1", "http200");
   fetch("https://w3c.github.io/hr-labels.json").then(res => res.json()).then(entries => {
     const s = new Set();
     entries.forEach(e => s.add(e.repo));
-    return s.forEach(r => testRoute(`/v3/repos/${r}/issues?ttl=15`, `http200`, `repository_url`, `https://api.github.com/repos/${r}`));
+    return s.forEach(r => testRoute(`v3/repos/${r}/issues?ttl=15`, `http200`, `repository_url`, `https://api.github.com/repos/${r}`));
   })
-  testRoute("/extra/repos/w3c/dxwg/w3c.json?ttl=1", "http200", "group", 99375);
-  testRoute("/extra/repos/w3c/webappsec-secure-contexts", "http200", "html_url", "https://github.com/w3c/webappsec-secure-contexts" );
+  testRoute("extra/repos/w3c/dxwg/w3c.json?ttl=1", "http200", "group", 99375);
+  testRoute("extra/repos/w3c/webappsec-secure-contexts", "http200", "html_url", "https://github.com/w3c/webappsec-secure-contexts" );
 
-  testRoute("/monitor/cache?n=15", "http404");
+  testRoute("monitor/cache?n=15", "http404");
 </script>
 </body>
 </html>
