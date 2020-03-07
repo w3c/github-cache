@@ -31,7 +31,10 @@ for (const [key, value] of (new URL(window.location)).searchParams) {
   config[key] = value;
 }
 
-const cache = (config.cache)? config.cache : `${document.location.protocol}//${document.location.host}`;
+let cache = config.cache;
+if (!config.cache) {
+  cache = (new URL(document.location.href + "/../..")).href;
+}
 // install the beacons observer
 const URLS = [];
 let expectedBeacons = 0;
@@ -54,7 +57,7 @@ rtObserver.observe({entryTypes: ["resource"]});
 const sendBeacons = () => {
   const resources = collectedBeacons;
   if (resources.length > 0) {
-    return navigator.sendBeacon(`../monitor/beacon`, JSON.stringify({ traceId, resources }));
+    return navigator.sendBeacon(`${cache}monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
   return true;
 };
@@ -69,7 +72,7 @@ const log = (html) => {
 const sample = (query) => {
   log(`Compare cache and api.github.com for ${query}`);
   const routes = [
-    `../v3${query}?ttl=1`,
+    `${cache}v3${query}?ttl=1`,
     `https://api.github.com${query}`
   ]
   expectedBeacons += routes.length;
