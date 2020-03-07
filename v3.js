@@ -5,7 +5,7 @@
 const config = require("./lib/config.js");
 const express = require("express");
 const monitor = require('./lib/monitor.js');
-const gh = require("./lib/octokit-cache.js");
+const cache = require("./lib/cache.js");
 const {sendObject, sendError} = require("./lib/utils.js");
 
 const router = express.Router();
@@ -38,43 +38,36 @@ router.all("/*", (req, res, next) => {
 router.route('/orgs/:owner/repos')
   .get((req, res, next) => {
     const {owner} = req;
-    gh.get(req, res, `/orgs/${owner}/repos`)
-      .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
-      .then(data => sendObject(req, res, next, data))
+    cache.get(req, res, `/orgs/${owner}/repos`)
+       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
 
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const {repo, owner} = req;
-    gh.get(req, res, `/repos/${owner}/${repo}`)
-      .then(async (data) => {
-        if (data[0].archived) {
-          throw new Error(`repository not found ${owner}/${repo}`);
-        }
-        return data[0];
-      })
+    cache.get(req, res, `/repos/${owner}/${repo}`)
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
 
-async function gh_route(path) {
+async function v3_route(path) {
   router.route(`/repos/:owner/:repo/${path}`)
     .get((req, res, next) => {
       const {repo, owner} = req;
-      gh.get(req, res, `/repos/${owner}/${repo}/${path}`)
+      cache.get(req, res, `/repos/${owner}/${repo}/${path}`)
         .then(data => sendObject(req, res, next, data))
         .catch(err => sendError(req, res, next, err));
     });
 }
 
-gh_route('labels');
-gh_route('teams');
-gh_route('hooks');
-gh_route('license');
-gh_route('contents/w3c.json');
-gh_route('branches');
-gh_route('commits');
+v3_route('labels');
+v3_route('teams');
+v3_route('hooks');
+v3_route('license');
+v3_route('contents/w3c.json');
+v3_route('branches');
+v3_route('commits');
 // gh_route('community/code_of_conduct');
 // gh_route('projects');
 
@@ -93,7 +86,7 @@ router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const {repo, owner} = req;
     let state = req.query.state;
-    gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
+    cache.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
         data = data.sort(compareIssues)
         if (!state) {
@@ -113,7 +106,7 @@ router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
     const {repo, owner} = req;
     const number = req.params.number;
-    gh.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
+    cache.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
         data = data.filter(issue => issue.number == number)[0];
         if (!data) {
@@ -131,7 +124,7 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
   .get((req, res, next) => {
     const {repo, owner} = req;
     const number = req.params.number;
-    gh.get(req, res, `/repos/${owner}/${repo}/issues/${number}/comments`)
+    cache.get(req, res, `/repos/${owner}/${repo}/issues/${number}/comments`)
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
@@ -153,7 +146,7 @@ async function refreshRepository(owner, repo) {
     monitor.log(`refreshing routes for ${owner}/${repo}`);
   }
   for (const route of routes) {
-    await (gh.get(req, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
+    await (cache.get(req, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
   }
 }
 
@@ -166,7 +159,7 @@ async function refresh() {
   let repos = config.owners.map(owner => `/orgs/${owner.login}/repos`);
   for (let index = 0; index < repos.length; index++) {
     const repo = repos[index];
-    repos[index] = await (gh.get(req, undefined, repo).catch(() => []));
+    repos[index] = await (cache.get(req, undefined, repo).catch(() => []));
   }
   repos = repos.flat().filter(repo => !repo.archived);
   if (!repos.length) {

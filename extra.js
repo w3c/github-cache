@@ -4,7 +4,7 @@
 
 const config = require("./lib/config.js");
 const express = require("express");
-const gh = require("./lib/octokit-cache.js");
+const cache = require("./lib/cache.js");
 const {sendObject, sendError, decode} = require("./lib/utils.js");
 
 const router = express.Router();
@@ -38,7 +38,7 @@ router.all("/*", (req, res, next) => {
 
 async function w3cJson(req, res, owner, repo) {
   try {
-    const ghObject = (await gh.get(req, res, `/repos/${owner}/${repo}/contents/w3c.json`))[0];
+    const ghObject = (await cache.get(req, res, `/repos/${owner}/${repo}/contents/w3c.json`))[0];
     if (ghObject) {
       const w3c = decode(ghObject.content, ghObject.encoding, "json");
       if (Array.isArray(w3c.group)) {
@@ -77,13 +77,13 @@ router.route('/repos/:owner/:repo')
     if (!req.ttl) {
       req.ttl = DEFAULT_TTL;
     }
-    gh.get(req, res, `/repos/${owner}/${repo}`).then(async (repository) => {
+    cache.get(req, res, `/repos/${owner}/${repo}`).then(async (repository) => {
       // copy to avoid leaving traces in the cache
       const copy = Object.assign({}, repository[0]);
       copy.w3c = await w3cJson(req, res, owner, repo);
       for (const prop of ["labels", "teams", "branches", "hooks", "license"]) {
         try {
-          copy[prop] = await gh.get(req, res, `/repos/${owner}/${repo}/${prop}`);
+          copy[prop] = await cache.get(req, res, `/repos/${owner}/${repo}/${prop}`);
         } catch (err) {
           // ignore
         }
@@ -115,7 +115,7 @@ router.route('/ids/:id')
       throw new Error("invalid id");
     }
     req.ttl = DEFAULT_TTL; // 24 hours
-    const promises = config.owners.map(owner => gh.get(req, res, `/orgs/${owner.login}/repos`));
+    const promises = config.owners.map(owner => cache.get(req, res, `/orgs/${owner.login}/repos`));
     Promise.all(promises).then(results => results.flat())
       .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
       .then(repos => allW3CJson(req, res, repos, id))
