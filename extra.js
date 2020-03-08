@@ -112,7 +112,8 @@ router.route('/ids/:id')
   .get((req, res, next) => {
     const id = req.params.id.match(/[0-9]{4,6}/g);
     if (!id) {
-      throw new Error("invalid id");
+      sendError(req, res, next, {status: 404, message: "id must match [0-9]{4,6}"});
+      return;
     }
     req.ttl = DEFAULT_TTL; // 24 hours
     const promises = config.owners.map(owner => cache.get(req, res, `/orgs/${owner.login}/repos`));
