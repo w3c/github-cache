@@ -167,7 +167,7 @@ async function refresh() {
     return;
   }
   let current = 0;
-  const per_minute = Math.ceil(repos.length / (24 * 60));
+  const per_minute = Math.ceil(repos.length / (config.refreshCycle * 60));
   async function loop() {
     process.nextTick(async () => {
       for (let index = current; index < (current + per_minute); index++) {
