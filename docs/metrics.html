@@ -155,23 +155,23 @@ function svgElement(name, attrs, ...content) {
         <a href="#" onclick='draw("referer")'>referer</a></p>
       <p>Maximum time is <span id='max'></span>.</span></p>
       <section id='info'>
-      <p>Client side:
+      <p>Web Browser:
         <ul class='keywords'>
           <li class='duration'
           title='Total time spent by the browser to fetch the resource from the server'>client</li>
-          <li class='redirect' title='Time spent by the browsers in HTTP redirects'>redirect</li>
-        <li class='appcache' title='Time spent by the browser in its local cache'>browser cache</li>
-        <li class='domainLookup' title='Time spent by the browser in DNS resolution'>DNS</li>
-        <li class='tcp' title='Time spent by the browser in establishing the TCP connection'>TCP</li>
-        <li class='request' title='Time spent by the browser in sending the request and waiting for a response'>request</li>
-        <li class='response' title='Time spent by the browser in receiving and processing the response'>response</li></ul>
+          <li class='redirect' title='In HTTP redirects'>redirect</li>
+        <li class='appcache' title='In its local cache'>browser cache</li>
+        <li class='domainLookup' title='In DNS resolution'>DNS</li>
+        <li class='tcp' title='In establishing the TCP connection'>TCP</li>
+        <li class='request' title='In sending the request and waiting for a response'>request</li>
+        <li class='response' title='In receiving and processing the response'>response</li></ul>
       </p>
-      <p>Server side:
+      <p>Server:
         <ul class='keywords'>
-        <li class='monitor' title='Total time spent by the server to receive the request and send a response'>server</li>
-        <li class='read' title='Time spent by the server in its local cache'>read</li>
-        <li class='github' title='Time spent by the server dealing with api.github.com'>github</li>
-        <li class='pending' title='Time spent by the server waiting on a concurrent github request'>concurrent</li>
+        <li class='monitor' title='Total time to receive the request and send a response'>server</li>
+        <li class='read' title='Waiting on its local cache'>read</li>
+        <li class='github' title='Waiting on a github request'>github</li>
+        <li class='pending' title='Waiting on a concurrent github request'>concurrent</li>
         </ul>
       </p>
     </section>
