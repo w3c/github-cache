@@ -27,10 +27,19 @@ app.use("/extra", extra);
 
 app.use("/doc", express.static("docs"));
 
+if (!config.debug) {
+  process.on('unhandledRejection', error => {
+    console.log("-----------------------------");
+    console.log('unhandledRejection', error.message);
+    console.log(error);
+    console.log("-----------------------------");
+  });
+}
+
 const port = config.port || 5000;
-const server = app.listen(port, () => {
-  console.log("Server started in", (Date.now() - t0) + "ms.\n");
-  console.log("Using port " + server.address().port);
+
+app.listen(port, () => {
+  console.log(`Server started in ${Date.now() - t0}ms at http://localhost:${port}/`);
   if (!config.debug && process.env["NODE_ENV"] != "production") {
     console.warn("WARNING: 'export NODE_ENV=production' is missing");
     console.warn("See http://expressjs.com/en/advanced/best-practice-performance.html#set-node_env-to-production");
