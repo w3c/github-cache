@@ -15,7 +15,7 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/contents/w3c.json`
 - `/v3/repos/:owner/:repo/branches`
 - `/v3/repos/:owner/:repo/commits`
-- `/v3/repos/:owner/:repo/issues`
+- `/v3/repos/:owner/:repo/issues` (support `state` parameter)
 - `/v3/repos/:owner/:repo/issues/:number`
 - `/v3/repos/:owner/:repo/issues/:number/comments`
 
@@ -27,7 +27,7 @@ The server also exposes additional routes:
 
 For each route, you may use the following optional parameters:
 
-- `ttl` : a number representing the minutes since the last retrieval from GitHub
+- `ttl` : the maximum number of minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names
 
 By default, the ttl is 6 hours for GitHub routes, and 24 hours for additional routes.
