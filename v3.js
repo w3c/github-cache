@@ -143,12 +143,11 @@ router.route('/repos/:owner/:repo/issues/:number')
 // those are entries that I'd like to have available with ttl of 24 hours
 
 async function refreshRepository(owner, repo) {
-  const req = {ttl: 0};
   if (config.debug) {
     monitor.log(`refreshing routes for ${owner}/${repo}`);
   }
   for (const route of REPOSITORY_ROUTES) {
-    await (cache.get(req, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
+    await cache.refresh(`/repos/${owner}/${repo}${route}`);
   }
 }
 
