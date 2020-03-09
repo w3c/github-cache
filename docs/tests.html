@@ -146,6 +146,7 @@ rtObserver.observe({entryTypes: ["resource"]});
   testRoute("v3/repos/w3c/ttml2/branches", "http200");
   testRoute("v3/repos/w3c/magnetometer/commits", "http200");
   testRoute("v3/repos/w3c/user-timing/issues/23", "http200", "events_url", "https://api.github.com/repos/w3c/user-timing/issues/23/events");
+  testRoute("v3/repos/w3c/dxwg/issues/389", "http200", "events_url", "https://api.github.com/repos/w3c/dx-connegp/issues/1/events");
   testRoute("v3/repos/w3c/user-timing/issues/23/comments", "http200");
   testRoute("v3/repos/w3c/AB-memberonly", "http404");
   testRoute("v3/repos/w3c/dxwg/contents/w3c.json?ttl=1", "http200");

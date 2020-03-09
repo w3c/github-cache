@@ -35,39 +35,60 @@ router.all("/*", (req, res, next) => {
   return next();
 });
 
-router.route('/orgs/:owner/repos')
-  .get((req, res, next) => {
-    const {owner} = req;
-    cache.get(req, res, `/orgs/${owner}/repos`)
-       .then(data => sendObject(req, res, next, data))
-      .catch(err => sendError(req, res, next, err));
-  });
-
-router.route('/repos/:owner/:repo')
-  .get((req, res, next) => {
-    const {repo, owner} = req;
-    cache.get(req, res, `/repos/${owner}/${repo}`)
-      .then(data => sendObject(req, res, next, data))
-      .catch(err => sendError(req, res, next, err));
-  });
-
-async function v3_route(path) {
-  router.route(`/repos/:owner/:repo/${path}`)
+async function v3_org(path) {
+  const route = `/orgs/:owner${path}`;
+  monitor.log(`adding route ${route}`);
+  router.route(route)
     .get((req, res, next) => {
-      const {repo, owner} = req;
-      cache.get(req, res, `/repos/${owner}/${repo}/${path}`)
+      const {owner} = req;
+      cache.get(req, res, `/orgs/${owner}${path}`)
         .then(data => sendObject(req, res, next, data))
         .catch(err => sendError(req, res, next, err));
     });
 }
 
-v3_route('labels');
-v3_route('teams');
-v3_route('hooks');
-v3_route('license');
-v3_route('contents/w3c.json');
-v3_route('branches');
-v3_route('commits');
+
+async function v3_repo(path) {
+  const route = `/repos/:owner/:repo${path}`;
+  monitor.log(`adding route ${route}`);
+  router.route(route)
+    .get((req, res, next) => {
+      const {repo, owner} = req;
+      cache.get(req, res, `/repos/${owner}/${repo}${path}`)
+        .then(data => sendObject(req, res, next, data))
+        .catch(err => sendError(req, res, next, err));
+    });
+}
+
+
+async function v3_issue(path) {
+  const route = `/repos/:owner/:repo/issues/:number${path}`;
+  monitor.log(`adding route ${route}`);
+  router.route(route)
+    .get((req, res, next) => {
+      const {repo, owner} = req;
+      const number = req.params.number;
+      console.log("I'm here");
+      cache.get(req, res, `/repos/${owner}/${repo}/issues/${number}${path}`)
+        .then(data => sendObject(req, res, next, data))
+        .catch(err => sendError(req, res, next, err));
+    });
+}
+
+const ORGANIZATION_ROUTES = ['/repos'];
+const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/branches', '/commits', '/issues?state=all'];
+const ISSUE_ROUTES = ['/comments'];
+
+ORGANIZATION_ROUTES.forEach(path => {
+  v3_org(path);
+});
+REPOSITORY_ROUTES.forEach(path => {
+  v3_repo(path);
+});
+ISSUE_ROUTES.forEach(path => {
+  v3_issue(path);
+});
+
 // gh_route('community/code_of_conduct');
 // gh_route('projects');
 
@@ -101,7 +122,6 @@ router.route('/repos/:owner/:repo/issues')
       .catch(err => sendError(req, res, next, err));
   });
 
-
 router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -110,21 +130,10 @@ router.route('/repos/:owner/:repo/issues/:number')
       .then(data => {
         data = data.filter(issue => issue.number == number)[0];
         if (!data) {
-          monitor.warn(`${owner}/${repo}/issues/${number} doesn't exist`);
-          res.status(404).send(`Cannot GET ${req.url}`);
-        } else {
-          sendObject(req, res, next, data);
+          return cache.get(req, res, `/repos/${owner}/${repo}/issues/${number}`);
         }
-        return next();
+        return data;
       })
-      .catch(err => sendError(req, res, next, err));
-  });
-
-router.route('/repos/:owner/:repo/issues/:number/comments')
-  .get((req, res, next) => {
-    const {repo, owner} = req;
-    const number = req.params.number;
-    cache.get(req, res, `/repos/${owner}/${repo}/issues/${number}/comments`)
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
@@ -132,20 +141,11 @@ router.route('/repos/:owner/:repo/issues/:number/comments')
 // those are entries that I'd like to have available with ttl of 24 hours
 
 async function refreshRepository(owner, repo) {
-  const routes = [
-    ``,
-    `/contents/w3c.json`,
-    `/labels`,
-    `/teams`,
-    `/hooks`,
-    `/license`,
-    `/branches`,
-  ];
   const req = {ttl: 0};
   if (config.debug) {
     monitor.log(`refreshing routes for ${owner}/${repo}`);
   }
-  for (const route of routes) {
+  for (const route of REPOSITORY_ROUTES) {
     await (cache.get(req, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
   }
 }
