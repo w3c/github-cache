@@ -21,7 +21,7 @@ The server exposes the following routes from GitHub:
 
 The server also exposes additional routes:
 
-- `/extra/ids/:id`
+- `/extra/ids/:id` (🚧)
 - `/extra/repos/:owner/:repo`
 - `/extra/repos/:owner/:repo/w3c.json`
 
@@ -33,6 +33,16 @@ For each route, you may use the following optional parameters:
 By default, the ttl is 6 hours for GitHub routes, and 24 hours for additional routes.
 
 Additional routes take times to compute so using a ttl below 24 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
+
+## Starting the server
+
+```js
+// install the packages
+npm install
+
+// start the server
+npm start
+```
 
 ## Examples
 
@@ -62,6 +72,12 @@ const getFromCache = async (query_url, options) => {
   throw new Error(`github-cache complained ${res.status}`);
 }
 ```
+
+## Monitoring
+
+The service reports its usage metrics at:
+
+    http://localhost:8080/monitor/usage
 
 ## Performance metrics
 
