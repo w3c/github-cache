@@ -103,6 +103,7 @@ function compareIssues(a, b) {
   return 0;
 }
 
+monitor.log(`adding route /repos/:owner/:repo/issues`);
 router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -122,6 +123,7 @@ router.route('/repos/:owner/:repo/issues')
       .catch(err => sendError(req, res, next, err));
   });
 
+monitor.log(`adding route /repos/:owner/:repo/issues/:number`);
 router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -151,40 +153,55 @@ async function refreshRepository(owner, repo) {
 }
 
 async function refresh() {
-  if (config.debug) {
+  if (!config.debug) {
     // abort
-    return;
-  }
-  const req = {ttl: 0};
-  let repos = config.owners.map(owner => `/orgs/${owner.login}/repos`);
-  for (let index = 0; index < repos.length; index++) {
-    const repo = repos[index];
-    repos[index] = await (cache.get(req, undefined, repo).catch(() => []));
-  }
-  repos = repos.flat().filter(repo => !repo.archived);
-  if (!repos.length) {
-    monitor.error("Can't access repositories");
+    monitor.warn(`refresh cycle not starting (debug mode)`);
     return;
   }
   let current = 0;
-  const per_minute = Math.ceil(repos.length / (config.refreshCycle * 60));
+  let per_minute;
+  let repos;
   async function loop() {
     process.nextTick(async () => {
-      for (let index = current; index < (current + per_minute); index++) {
-        const repo = repos[index];
-        await refreshRepository(repo.owner.login, repo.name);
-      }
-      current = current + per_minute;
-      if (current < repos.length) {
-        setTimeout(loop, 1000 * 60);
-      } else {
-        // start all over again
-        setTimeout(refresh, 1000 * 60);
+      try {
+        for (let index = current; index < (current + per_minute); index++) {
+          const repo = repos[index];
+          await refreshRepository(repo.owner.login, repo.name);
+        }
+        current = current + per_minute;
+        if (current < repos.length) {
+          setTimeout(loop, 1000 * 60);
+        } else {
+          monitor.log("refresh cycle finished. restarting in a minute");
+          // start all over again
+          setTimeout(refresh, 1000 * 60);
+        }
+      } catch (err) {
+        monitor.error(`refresh loop crashed`);
+        monitor.error(err);
       }
     });
   }
-  monitor.log(`refreshing ${repos.length} repositories (${per_minute} per minute)`);
-  setTimeout(loop, 1000 * 60); // start working after a minute
+  try {
+    const req = {ttl: 0};
+    repos = config.owners.map(owner => `/orgs/${owner.login}/repos`);
+    for (let index = 0; index < repos.length; index++) {
+      const repo = repos[index];
+      repos[index] = await (cache.get(req, undefined, repo).catch(() => []));
+    }
+    repos = repos.flat().filter(repo => !repo.archived);
+    if (!repos.length) {
+      monitor.error("Can't access repositories");
+      return;
+    }
+    current = 0;
+    per_minute = Math.ceil(repos.length / (config.refreshCycle * 60));
+    monitor.log(`refreshing ${repos.length} repositories (${per_minute} per minute)`);
+    setTimeout(loop, 1000 * 60); // start working after a minute
+  } catch (err) {
+    monitor.error(`refresh cycle crashed`);
+    monitor.error(err);
+  }
 }
 
 refresh();
