@@ -153,7 +153,7 @@ async function refreshRepository(owner, repo) {
 }
 
 async function refresh() {
-  if (!config.debug) {
+  if (config.debug) {
     // abort
     monitor.warn(`refresh cycle not starting (debug mode)`);
     return;
