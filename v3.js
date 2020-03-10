@@ -76,7 +76,7 @@ async function v3_issue(path) {
 }
 
 const ORGANIZATION_ROUTES = ['/repos'];
-const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/branches', '/issues?state=all'];
+const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/branches', '/commits', '/issues?state=all'];
 const ISSUE_ROUTES = ['/comments'];
 
 ORGANIZATION_ROUTES.forEach(path => {
@@ -147,7 +147,8 @@ async function refreshRepository(owner, repo) {
     monitor.log(`refreshing routes for ${owner}/${repo}`);
   }
   for (const route of REPOSITORY_ROUTES) {
-    await cache.refresh(`/repos/${owner}/${repo}${route}`);
+    const request = {ttl: 0};
+    await (cache.weak_get(request, undefined, `/repos/${owner}/${repo}${route}`).catch(() => {}));
   }
 }
 
