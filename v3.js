@@ -164,7 +164,7 @@ async function refresh() {
   async function loop() {
     process.nextTick(async () => {
       try {
-        for (let index = current; index < (current + per_minute); index++) {
+        for (let index = current; index < (current + per_minute) && index < repos.length; index++) {
           const repo = repos[index];
           await refreshRepository(repo.owner.login, repo.name);
         }
