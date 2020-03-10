@@ -184,11 +184,11 @@ function svgElement(name, attrs, ...content) {
       </section>
     </section>
 <p style='text-align:right'><a href="https://github.com/plehegar/github-cache/">github-cache</a>:
-    <a href='../monitor/logs'>logs</a>, <a href='../monitor/gh_logs'>gh_logs</a>, <a href='../monitor/clear_beacon'>reset</a>, <a href='../monitor/usage'>usage</a></p>
+    <a href='../monitor/logs'>logs</a>, <a href='../monitor/gh_logs'>gh_logs</a>, <a href='../monitor/clear_beacon'>reset</a>, <a href='active.html'>usage</a></p>
 </main>
   <script>
     const config = {
-      cache: "..",
+      cache: (new URL(document.location.href + "/../..")).href,
       sort: "name"
     };
 
@@ -208,7 +208,7 @@ function svgElement(name, attrs, ...content) {
       return new Intl.NumberFormat().format(n);
     }
     async function stats() {
-      const usage = await fetch(`${config.cache}/monitor/usage`).then(res => res.json());
+      const usage = await fetch(`${config.cache}monitor/usage`).then(res => res.json());
       const st = document.getElementById('stats');
       st.appendChild(htmlElement("span", `Status: ${usage.status}, `));
       st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime/60/60))} hours, `));
@@ -234,7 +234,7 @@ function svgElement(name, attrs, ...content) {
     let LOADED;
     let max = 0;
     async function beacons() {
-      LOADED = await fetch(`${config.cache}/monitor/beacon`).then(res => res.json()).then(bs => bs.sort((a, b) => algo('receivedAt')));
+      LOADED = await fetch(`${config.cache}monitor/beacon`).then(res => res.json()).then(bs => bs.sort((a, b) => algo('receivedAt')));
       max = LOADED.reduce((a, v) => (v.duration > a) ? v.duration : a, 0);
       draw(config.sort);
     }

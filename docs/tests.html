@@ -26,6 +26,7 @@
   </section>
   <script>
 const config = {
+  cache: (new URL(document.location.href + "/../..")).href,
 };
 
 // parse the URL to update the config
@@ -33,17 +34,12 @@ for (const [key, value] of (new URL(window.location)).searchParams) {
   config[key] = value;
 }
 
-let cache = config.cache;
-if (!config.cache) {
-  cache = (new URL(document.location.href + "/../..")).href;
-}
-
 const URLS = [];
 const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
   const resources = list.getEntries().filter(e => URLS.includes(e.name));
   if (resources.length > 0 && cache.indexOf("localhost") != -1) {
-    return navigator.sendBeacon(`${cache}monitor/beacon`, JSON.stringify({ traceId, resources }));
+    return navigator.sendBeacon(`${config.cache}monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
 });
 rtObserver.observe({entryTypes: ["resource"]});
@@ -126,7 +122,7 @@ rtObserver.observe({entryTypes: ["resource"]});
   }
 
   function testRoute(url, expectedStatus, key, value) {
-    url = `${cache}${url}`;
+    url = `${config.cache}${url}`;
     URLS.push(url);
     test(url, expectedStatus, key, value);
   }

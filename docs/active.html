@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>Cache Monitor</title>
+<style>
+.x.axis line {
+  shape-rendering: auto;
+}
+
+.line, rect {
+  fill: none;
+  stroke-width: 1.5px;
+}
+rect {
+  stroke: #888;
+}
+
+text.title {
+  font-size: 16px;
+  font-weight: 300;
+}
+</style>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script>
+const config = {
+  cache: (new URL(document.location.href + "/../..")).href,
+};
+
+// parse the URL to update the config
+for (const [key, value] of (new URL(window.location)).searchParams) {
+  config[key] = value;
+}
+
+class Graph {
+  constructor(selector, tracks, options) {
+    this.options = Object.assign({}, options);
+    if (!this.options.ticks) this.options.ticks = 360;
+    this.tracks = [];
+    for (let index = 0; index < tracks.length; index++) {
+      const track = tracks[index];
+      const newtrack = Object.assign({}, track);
+      if (!newtrack.format) newtrack.format = (x) => x;
+      if (!newtrack.title) newtrack.title = "Unknown";
+      if (!newtrack.update) newtrack.update = (data) => [data.current, data.total];
+      newtrack.data = d3.range(this.options.ticks).map(() => 0);
+      newtrack.color = d3.schemeSet1[index];
+      this.tracks.push(newtrack);
+    }
+
+    const margin = {top: 0, right: 0, bottom: 0, left: 0},
+        width = (this.options.ticks*2) - margin.right,
+        height = 100 - margin.top - margin.bottom;
+
+    const x = this.x = d3.scaleLinear()
+        .domain([0, this.options.ticks -1])
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, 1])
+        .range([height, 0]);
+
+    for (const track of this.tracks) {
+      track.line = d3.line()
+        .x(function(d, i) { return x(i); })
+        .y(function(d, i) { return y(d); });
+    }
+
+    const graph = d3.select(selector).append("section").attr("class", "live-graph");
+
+    const svg = graph.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+    const liveGraph = svg.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    liveGraph.append("rect")
+      .attr("width", width)
+      .attr("height", height);
+
+    liveGraph.append("defs").append("clipPath")
+        .attr("id", "clip")
+      .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+    for (let index = 0; index < this.tracks.length; index++) {
+      const track = this.tracks[index];
+      track.text = liveGraph.append("text").attr("class", "title")
+        .attr("x", 10)
+        .attr("y", height - ((height/(this.tracks.length*2))*index) - 10)
+        .attr("fill", track.color)
+        .text(track.title);
+    }
+
+    const clip = liveGraph.append("g")
+        .attr("clip-path", "url(#clip)");
+    for (const track of this.tracks) {
+      track.path = clip.append("path")
+        .datum(track.data)
+        .attr("class", "line")
+        .attr("stroke", track.color)
+        .attr("d", track.line);
+    }
+  }
+
+  update(pdata) {
+    for (const track of this.tracks) {
+      const data = track.update(pdata);
+      track.data.push(data[0] / data[1]);
+      track.path
+        .attr("d", track.line)
+        .attr("transform", null)
+        .attr("transform", "translate(" + this.x(-1) + ")");
+      track.data.shift();
+      track.text.text(`${track.title}: ${track.format(data[0])} / ${track.format(data[1])} (${Math.round((data[0]/data[1])*10000)/100}%)`)
+    }
+  }
+}
+
+function update(graph) {
+  fetch(`${config.cache}monitor/usage`).then(res => res.json())
+    .then(usage => {
+      graph.update(usage);
+    }).catch(console.error);
+}
+
+function start() {
+  const g = new Graph("body", [
+    {
+      title: "Heap",
+      format: (x) => `${Math.round(x/10000)/100}Mb`,
+      update: (usage) => [usage.heapUsed, usage.heapTotal]
+    },
+    {
+      title: "GitHub limit",
+      update: (usage) => [usage.GitHub.rate.limit-usage.GitHub.rate.remaining, usage.GitHub.rate.limit]
+    }]);
+  update(g);
+  setInterval(() => update(g), 10000);
+}
+
+window.addEventListener("load", start, true);
+</script>
+
+<body>
+<h1>Cache monitor</h1>
+<p id='stats'>
+</p>
+
+</body>
