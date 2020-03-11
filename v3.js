@@ -107,6 +107,7 @@ router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const {repo, owner} = req;
     let state = req.query.state;
+    let labels = req.query.labels;
     cache.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
         data = data.sort(compareIssues)
@@ -117,6 +118,13 @@ router.route('/repos/:owner/:repo/issues')
           data = data.filter(i => i.state === state);
         }
         return data;
+      })
+      .then(data => {
+        if (!labels) {
+          return data;
+        }
+        labels = labels.split(',');
+        return data.filter(i => i.labels.find(l => labels.includes(l.name)));
       })
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));

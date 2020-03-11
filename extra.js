@@ -5,11 +5,10 @@
 const config = require("./lib/config.js");
 const express = require("express");
 const cache = require("./lib/cache.js");
+const monitor = require("./lib/monitor.js");
 const {sendObject, sendError, decode} = require("./lib/utils.js");
 
 const router = express.Router();
-
-const DEFAULT_TTL = 1440;
 
 // Our various routes
 
@@ -36,6 +35,11 @@ router.all("/*", (req, res, next) => {
   return next();
 });
 
+function setCompounded(req, res) {
+  req.compounded = true;
+  res.compounded = true;
+}
+
 async function w3cJson(req, res, owner, repo) {
   try {
     const ghObject = (await cache.get(req, res, `/repos/${owner}/${repo}/contents/w3c.json`))[0];
@@ -49,8 +53,8 @@ async function w3cJson(req, res, owner, repo) {
       return w3c;
     }
   } catch (e) {
-    if (e.fromGitHubCache && e.status === 304) {
-      throw e;
+    if (e.status === 304) {
+      monitor.error(`compounded requests aren't allowed to return 304 ${req.originalUrl}`);
     }
     //otherwise ignore
   }
@@ -60,9 +64,6 @@ async function w3cJson(req, res, owner, repo) {
 router.route('/repos/:owner/:repo/w3c.json')
   .get((req, res, next) => {
     const {repo, owner} = req;
-    if (!req.ttl) {
-      req.ttl = DEFAULT_TTL;
-    }
     w3cJson(req, res, owner, repo)
       .then(data => {
         return data;
@@ -74,16 +75,24 @@ router.route('/repos/:owner/:repo/w3c.json')
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const {repo, owner} = req;
-    if (!req.ttl) {
-      req.ttl = DEFAULT_TTL;
+    let fields = req.query.fields;
+    if (fields) {
+      fields = fields.split(',');
+    } else {
+      fields = [];
     }
+    setCompounded(req, res);
     cache.get(req, res, `/repos/${owner}/${repo}`).then(async (repository) => {
       // copy to avoid leaving traces in the cache
       const copy = Object.assign({}, repository[0]);
-      copy.w3c = await w3cJson(req, res, owner, repo);
+      if (fields.length === 0 || fields.includes("w3c")) {
+        copy.w3c = await w3cJson(req, res, owner, repo);
+      }
       for (const prop of ["labels", "teams", "branches", "hooks", "license"]) {
         try {
-          copy[prop] = await cache.get(req, res, `/repos/${owner}/${repo}/${prop}`);
+          if (fields.length === 0 || fields.includes(prop)) {
+            copy[prop] = await cache.get(req, res, `/repos/${owner}/${repo}/${prop}`);
+          }
         } catch (err) {
           // ignore
         }
@@ -93,33 +102,31 @@ router.route('/repos/:owner/:repo')
       .catch(err => sendError(req, res, next, err));
   });
 
-async function allW3CJson(req, res, repositories, id) {
-  const all = [];
-  for (const repo of repositories) {
-    const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
-    if (conf.group == id
-        || (Array.isArray(conf.group) && conf.group.find(g => g == id))) {
-      conf.repository = repo.full_name;
-      all.push(conf);
-    } else if (!id) {
-      all.push(conf);
-    }
-  }
-  return all;
-}
-
-router.route('/ids/:id')
+router.route('/repos/:id?')
   .get((req, res, next) => {
     const id = req.params.id.match(/[0-9]{4,6}/g);
     if (!id) {
       sendError(req, res, next, {status: 404, message: "id must match [0-9]{4,6}"});
       return;
     }
-    req.ttl = DEFAULT_TTL; // 24 hours
+    setCompounded(req, res);
     const promises = config.owners.map(owner => cache.get(req, res, `/orgs/${owner.login}/repos`));
     Promise.all(promises).then(results => results.flat())
       .then(data => data.filter(repo => !repo.archived)) // filter out the archived ones
-      .then(repos => allW3CJson(req, res, repos, id))
+      .then(async (data) => {
+        const all = [];
+        for (const repo of data) {
+          const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
+          if (conf.group == id || (Array.isArray(conf.group) && conf.group.find(g => g == id))) {
+            const copy = Object.assign({}, repo);
+            copy.w3c = conf;
+            all.push(copy);
+          } else if (!id) {
+            all.push(repo);
+          }
+        }
+        return all;
+      })
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
