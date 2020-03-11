@@ -68,7 +68,6 @@ async function v3_issue(path) {
     .get((req, res, next) => {
       const {repo, owner} = req;
       const number = req.params.number;
-      console.log("I'm here");
       cache.get(req, res, `/repos/${owner}/${repo}/issues/${number}${path}`)
         .then(data => sendObject(req, res, next, data))
         .catch(err => sendError(req, res, next, err));
