@@ -44,6 +44,7 @@ class Graph {
       if (!newtrack.update) newtrack.update = (data) => [data.current, data.total];
       newtrack.data = d3.range(this.options.ticks).map(() => 0);
       newtrack.color = d3.schemeSet1[index];
+      newtrack.max = Number.NEGATIVE_INFINITY;
       this.tracks.push(newtrack);
     }
 
