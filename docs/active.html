@@ -18,6 +18,7 @@ rect {
 text.title {
   font-size: 16px;
   font-weight: 300;
+  text-shadow: 1px 1px 2px black;
 }
 </style>
 <script src="https://d3js.org/d3.v5.min.js"></script>
@@ -85,15 +86,6 @@ class Graph {
         .attr("width", width)
         .attr("height", height);
 
-    for (let index = 0; index < this.tracks.length; index++) {
-      const track = this.tracks[index];
-      track.text = liveGraph.append("text").attr("class", "title")
-        .attr("x", 10)
-        .attr("y", height - ((height/(this.tracks.length*2))*index) - 10)
-        .attr("fill", track.color)
-        .text(track.title);
-    }
-
     const clip = liveGraph.append("g")
         .attr("clip-path", "url(#clip)");
     for (const track of this.tracks) {
@@ -103,6 +95,15 @@ class Graph {
         .attr("stroke", track.color)
         .attr("d", track.line);
     }
+    for (let index = 0; index < this.tracks.length; index++) {
+      const track = this.tracks[index];
+      track.text = liveGraph.append("text").attr("class", "title")
+        .attr("x", 10)
+        .attr("y", height - ((height/(this.tracks.length*2))*index) - 10)
+        .attr("fill", track.color)
+        .text(track.title);
+    }
+
   }
 
   update(data) {
