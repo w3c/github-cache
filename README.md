@@ -15,7 +15,7 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/contents/w3c.json`
 - `/v3/repos/:owner/:repo/branches`
 - `/v3/repos/:owner/:repo/commits`
-- `/v3/repos/:owner/:repo/issues` (support `state` and `labels` parameter)
+- `/v3/repos/:owner/:repo/issues` (support `state`, `labels`, and `search` parameter)
 - `/v3/repos/:owner/:repo/issues/:number`
 - `/v3/repos/:owner/:repo/issues/:number/comments`
 

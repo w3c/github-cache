@@ -108,6 +108,7 @@ router.route('/repos/:owner/:repo/issues')
     const {repo, owner} = req;
     let state = req.query.state;
     let labels = req.query.labels;
+    let search = req.query.search;
     cache.get(req, res, `/repos/${owner}/${repo}/issues?state=all`)
       .then(data => {
         data = data.sort(compareIssues)
@@ -125,6 +126,22 @@ router.route('/repos/:owner/:repo/issues')
         }
         labels = labels.split(',').map(s => s.toLowerCase());
         return data.filter(i => i.labels.find(l => labels.includes(l.name.toLowerCase())));
+      })
+      .then(data => {
+        if (!search) {
+          return data;
+        }
+        search = search.split(',').map(s => s.toLowerCase());
+        return data.filter(i => {
+          return i.labels.map(l => l.name.toLowerCase())
+            .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+            || i.milestone && [i.milestone.title.toLowerCase()]
+              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+            || i.title && [i.title.toLowerCase()]
+              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+            || i.assignees.map(l => l.login.toLowerCase())
+              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false);
+        });
       })
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
