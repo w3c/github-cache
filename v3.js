@@ -123,8 +123,8 @@ router.route('/repos/:owner/:repo/issues')
         if (!labels) {
           return data;
         }
-        labels = labels.split(',');
-        return data.filter(i => i.labels.find(l => labels.includes(l.name)));
+        labels = labels.split(',').map(s => s.toLowerCase());
+        return data.filter(i => i.labels.find(l => labels.includes(l.name.toLowerCase())));
       })
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
