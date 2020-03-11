@@ -106,7 +106,19 @@ class Graph {
 
   update(pdata) {
     for (const track of this.tracks) {
-      const data = track.update(pdata);
+      let data;
+      try {
+        data = track.update(pdata);
+        if (!data[0]) {
+          data[0] = 0;
+        }
+        if (!data[1]) {
+          data[1] = 1;
+        }
+      } catch (error) {
+        console.error(error);
+        data = [ 0, 1 ];
+      }
       track.data.push(data[0] / data[1]);
       track.path
         .attr("d", track.line)
@@ -118,26 +130,68 @@ class Graph {
   }
 }
 
-function update(graph) {
+let canNotify = (Notification.permission === "granted");
+if (!canNotify && Notification.permission !== "denied") {
+  Notification.requestPermission(p => canNotify = (p === "granted"));
+}
+function notify() {
+  if (canNotify) {
+    new Notification(`${config.cache} needs attention!`,
+      { renotify: false, requireInteraction: true, tag: config.cache });
+  }
+}
+
+function update(...graphs) {
   fetch(`${config.cache}monitor/usage`).then(res => res.json())
+    .catch(error => {
+      console.error(error);
+      notify();
+      return undefined;
+    })
     .then(usage => {
-      graph.update(usage);
+      graphs.forEach(graph => graph.update(usage));
     }).catch(console.error);
 }
 
+
+
 function start() {
+  const formatMB = (x) => `${Math.round(x/10000)/100}Mb`;
   const g = new Graph("body", [
     {
       title: "Heap",
-      format: (x) => `${Math.round(x/10000)/100}Mb`,
+      format: formatMB,
       update: (usage) => [usage.heapUsed, usage.heapTotal]
     },
     {
       title: "GitHub limit",
       update: (usage) => [usage.GitHub.rate.limit-usage.GitHub.rate.remaining, usage.GitHub.rate.limit]
     }]);
-  update(g);
-  setInterval(() => update(g), 10000);
+    const g2 = new Graph("body", [
+    {
+      title: "V8 New space",
+      format: formatMB,
+      update: (usage) => {
+        const space = usage.v8.getHeapSpaceStatistics.find(e => e.space_name === "new_space");
+        return [space.space_used_size, space.physical_space_size]
+      }
+    },
+    {
+      title: "V8 Old space",
+      format: formatMB,
+      update: (usage) => {
+        const space = usage.v8.getHeapSpaceStatistics.find(e => e.space_name === "old_space");
+        return [space.space_used_size, space.physical_space_size]
+      }
+    },
+    {
+      title: "V8 Heap Statistics",
+      format: formatMB,
+      update: (usage) => [usage.v8.getHeapStatistics.used_heap_size, usage.v8.getHeapStatistics.heap_size_limit],
+    },
+  ]);
+  update(g, g2);
+  setInterval(() => update(g, g2), 10000);
 }
 
 window.addEventListener("load", start, true);
