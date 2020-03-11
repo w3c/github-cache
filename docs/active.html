@@ -104,28 +104,33 @@ class Graph {
     }
   }
 
-  update(pdata) {
+  update(data) {
     for (const track of this.tracks) {
-      let data;
+      let measure;
       try {
-        data = track.update(pdata);
-        if (!data[0]) {
-          data[0] = 0;
+        measure = track.update(data);
+        if (!measure[0]) {
+          measure[0] = 0;
         }
-        if (!data[1]) {
-          data[1] = 1;
+        if (!measure[1]) {
+          measure[1] = 1;
         }
       } catch (error) {
         console.error(error);
-        data = [ 0, 1 ];
+        measure = [ 0, 1 ];
       }
-      track.data.push(data[0] / data[1]);
+      if (measure[1] > track.max) {
+        track.max = measure[1];
+      } else {
+        measure[1] = track.max;
+      }
+      track.data.push(measure[0] / measure[1]);
       track.path
         .attr("d", track.line)
         .attr("transform", null)
         .attr("transform", "translate(" + this.x(-1) + ")");
       track.data.shift();
-      track.text.text(`${track.title}: ${track.format(data[0])} / ${track.format(data[1])} (${Math.round((data[0]/data[1])*10000)/100}%)`)
+      track.text.text(`${track.title}: ${track.format(measure[0])} / ${track.format(measure[1])} (${Math.round((measure[0]/measure[1])*10000)/100}%)`)
     }
   }
 }
