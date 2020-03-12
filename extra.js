@@ -88,6 +88,13 @@ router.route('/repos/:owner/:repo')
       if (fields.length === 0 || fields.includes("w3c")) {
         copy.w3c = await w3cJson(req, res, owner, repo);
       }
+      if (fields.length === 0 || fields.includes("prpreview")) {
+        try {
+          copy.prpreview = await (cache.get(req, res, `/repos/${owner}/${repo}/contents/pr-preview.json`).then(res => res.json());
+        } catch (err) {
+          // ignore
+        }
+      }
       for (const prop of ["labels", "teams", "branches", "hooks", "license"]) {
         try {
           if (fields.length === 0 || fields.includes(prop)) {

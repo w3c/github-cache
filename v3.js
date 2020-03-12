@@ -75,7 +75,7 @@ async function v3_issue(path) {
 }
 
 const ORGANIZATION_ROUTES = ['/repos'];
-const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/branches', '/commits', '/issues?state=all'];
+const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/contents/pr-preview.json', '/branches', '/commits', '/issues?state=all'];
 const ISSUE_ROUTES = ['/comments'];
 
 ORGANIZATION_ROUTES.forEach(path => {
