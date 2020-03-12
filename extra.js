@@ -90,7 +90,7 @@ router.route('/repos/:owner/:repo')
       }
       if (fields.length === 0 || fields.includes("prpreview")) {
         try {
-          copy.prpreview = await (cache.get(req, res, `/repos/${owner}/${repo}/contents/pr-preview.json`).then(res => res.json());
+          copy.prpreview = await (cache.get(req, res, `/repos/${owner}/${repo}/contents/pr-preview.json`).then(res => res.json()));
         } catch (err) {
           // ignore
         }
