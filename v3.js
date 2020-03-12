@@ -134,13 +134,13 @@ router.route('/repos/:owner/:repo/issues')
         search = search.split(',').map(s => s.toLowerCase());
         return data.filter(i => {
           return i.labels.map(l => l.name.toLowerCase())
-            .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+            .reduce((a, v) => search.find(term => v.includes(term) || a, false)
             || i.milestone && [i.milestone.title.toLowerCase()]
-              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+              .reduce((a, v) => search.find(term => v.includes(term) || a, false)
             || i.title && [i.title.toLowerCase()]
-              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false)
+              .reduce((a, v) => search.find(term => v.includes(term) || a, false)
             || i.assignees.map(l => l.login.toLowerCase())
-              .reduce((a, v) => search.find(term => v.indexOf(term) != -1) || a, false);
+              .reduce((a, v) => search.find(term => v.includes(term) || a, false);
         });
       })
       .then(data => sendObject(req, res, next, data))

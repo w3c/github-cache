@@ -38,7 +38,7 @@ const URLS = [];
 const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
   const resources = list.getEntries().filter(e => URLS.includes(e.name));
-  if (resources.length > 0 && cache.indexOf("localhost") != -1) {
+  if (resources.length > 0 && cache.includes("localhost")) {
     return navigator.sendBeacon(`${config.cache}monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
 });
