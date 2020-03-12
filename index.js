@@ -4,10 +4,12 @@
 
 const t0 = Date.now();
 
-const config = require("./lib/config.js");
 const express = require("express");
 const compression = require("compression");
+
+const config = require("./lib/config.js");
 const monitor = require('./lib/monitor.js');
+const {enhanceRequest} = require("./lib/utils.js");
 const v3 = require("./v3.js");
 const extra = require("./extra.js");
 
@@ -21,6 +23,11 @@ monitor.setName("GitHub cache", config);
 monitor.install(app);
 
 app.use(compression());
+
+app.use((req, res, next) => {
+  enhanceRequest(req);
+  next();
+});
 
 app.use("/v3", v3);
 app.use("/extra", extra);

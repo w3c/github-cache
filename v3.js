@@ -6,7 +6,7 @@ const config = require("./lib/config.js");
 const express = require("express");
 const monitor = require('./lib/monitor.js');
 const cache = require("./lib/cache.js");
-const {sendObject, sendError} = require("./lib/utils.js");
+const {sendObject, sendError, searchTerms} = require("./lib/utils.js");
 
 const router = express.Router();
 
@@ -75,7 +75,10 @@ async function v3_issue(path) {
 }
 
 const ORGANIZATION_ROUTES = ['/repos'];
-const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license', '/contents/w3c.json', '/contents/.pr-preview.json', '/branches', '/commits', '/issues?state=all'];
+const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license',
+  '/contents/w3c.json', '/contents/CODE_OF_CONDUCT.md', '/contents/.pr-preview.json',
+  '/contents/CONTRIBUTING.md',
+  '/branches', '/commits', '/issues?state=all'];
 const ISSUE_ROUTES = ['/comments'];
 
 ORGANIZATION_ROUTES.forEach(path => {
@@ -133,14 +136,10 @@ router.route('/repos/:owner/:repo/issues')
         }
         search = search.split(',').map(s => s.toLowerCase());
         return data.filter(i => {
-          return i.labels.map(l => l.name.toLowerCase())
-            .reduce((a, v) => search.find(term => v.includes(term) || a, false)
-            || i.milestone && [i.milestone.title.toLowerCase()]
-              .reduce((a, v) => search.find(term => v.includes(term) || a, false)
-            || i.title && [i.title.toLowerCase()]
-              .reduce((a, v) => search.find(term => v.includes(term) || a, false)
-            || i.assignees.map(l => l.login.toLowerCase())
-              .reduce((a, v) => search.find(term => v.includes(term) || a, false);
+          return searchTerms(i.labels.map(l => l.name), search)
+            || i.milestone && searchTerms([i.milestone.title], search)
+            || i.title && searchTerms([i.title], search)
+            || i.assignees && searchTerms(i.assignees.map(l => l.login), search);
         });
       })
       .then(data => sendObject(req, res, next, data))

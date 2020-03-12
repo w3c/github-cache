@@ -130,6 +130,7 @@ rtObserver.observe({entryTypes: ["resource"]});
   testRoute("v3/orgs/w3c/repos?fields=private", "http200", "private", false);
   testRoute("v3/repos/w3c/webauthn", "http200", "html_url", "https://github.com/w3c/webauthn");
   testRoute("v3/repos/w3c/hr-time?fields=html_url", "http200", "html_url", "https://github.com/w3c/hr-time");
+  testRoute("v3/repos/w3c/webauthn/issues?search=technical", "http200", "repository_url", "https://api.github.com/repos/w3c/webauthn");
   testRoute("v3/repos/whatwg/html?ttl=0", "http200", "html_url", "https://github.com/whatwg/html");
   testRoute("v3/repos/w3c/user-timing/issues", "http200", "repository_url", "https://api.github.com/repos/w3c/user-timing");
   testRoute("v3/repos/w3c/a11y-review/labels", "http200");
@@ -151,9 +152,10 @@ rtObserver.observe({entryTypes: ["resource"]});
     entries.forEach(e => s.add(e.repo));
     return s.forEach(r => testRoute(`v3/repos/${r}/issues?ttl=15`, `http200`, `repository_url`, `https://api.github.com/repos/${r}`));
   })
-  testRoute("extra/repos/w3c/dxwg/w3c.json?ttl=1", "http200", "group", 99375);
+  testRoute("extra/repos/w3c/dxwg/w3c.json?ttl=1", "http200", "policy", "open");
   testRoute("extra/repos/w3c/webappsec-secure-contexts", "http200", "html_url", "https://github.com/w3c/webappsec-secure-contexts" );
   testRoute("extra/repos/114929", "http200");
+  testRoute("extra/repos?fields=w3c&type=process", "http200");
   testRoute("monitor/cache?n=15", "http404");
 </script>
 </body>

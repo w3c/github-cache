@@ -22,7 +22,8 @@ The server exposes the following routes from GitHub:
 
 The server also exposes additional routes:
 
-- `/extra/repos/:id?` (`id` is a W3C Group number)
+- `/extra/repos` (support [type](https://w3c.github.io/w3c.json.html#repo-type)). using `fields` is required for this route)
+- `/extra/repos/:id` (`id` is a W3C Group number)
 - `/extra/repos/:owner/:repo`
 - `/extra/repos/:owner/:repo/w3c.json`
 - `/extra/repos/:owner/:repo/pr-preview.json`
@@ -32,9 +33,9 @@ For each route, you may use the following optional parameters:
 - `ttl` : the maximum number of minutes since the last retrieval from GitHub
 - `fields` : a comma-separated list of object property names to include in the returned object
 
-By default, the ttl is 6 hours for GitHub routes, and 24 hours for additional routes.
+By default, the ttl is 6 hours for all routes.
 
-Additional routes take times to compute so using a ttl below 24 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
+Additional routes take times to compute so using a ttl below 6 hours may result in long delays for the response (you may get back HTTP 504 the first time you try).
 
 ## Starting the server
 
