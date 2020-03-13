@@ -6,7 +6,7 @@ const config = require("./lib/config.js");
 const express = require("express");
 const cache = require("./lib/cache.js");
 const monitor = require("./lib/monitor.js");
-const {sendObject, sendError, decode} = require("./lib/utils.js");
+const {sendObject, sendError, decode, searchTerms} = require("./lib/utils.js");
 
 const router = express.Router();
 
@@ -34,17 +34,14 @@ router.all("/*", (req, res, next) => {
   return next();
 });
 
-// indicate that this request and response will trigger a significant amount of cache.get
-function setCompounded(req, res) {
-}
-
 function transformContent(ghObject, encoding) {
   try {
     if (ghObject) {
       ghObject = ghObject[0];
-      if (ghObject) {
-        return decode(ghObject.content, ghObject.encoding, encoding);
+      if (!ghObject.transformed) {
+        ghObject.transformed = decode(ghObject.content, ghObject.encoding, encoding);
       }
+      return ghObject.transformed;
     }
   } catch (e) {
     //otherwise ignore
@@ -65,6 +62,9 @@ async function content(req, res, owner, repo, path, encoding) {
 }
 
 async function w3cJson(req, res, owner, repo) {
+  if (repo.w3c) {
+    return repo.w3c;
+  }
   const w3c = await content(req, res, owner, repo, "w3c.json", "json");
   if (Array.isArray(w3c.group)) {
     w3c.group = w3c.group.map(Number.parseInt);
@@ -101,14 +101,14 @@ async function enhanceRepository(req, res, repo) {
   if (!repo.w3c && req.queryFields.includes("w3c")) {
     repo.w3c = await w3cJson(req, res, repo.owner.login, repo.name);
   }
-  if (req.queryFields.includes("prpreview")) {
+  if (!repo.prpreview && req.queryFields.includes("prpreview")) {
     try {
       repo.prpreview = await content(req, res, repo.owner.login, repo.name, ".pr-preview.json", "json");
     } catch (err) {
       // ignore
     }
   }
-  if (req.queryFields.includes("license")) {
+  if (!repo.license && req.queryFields.includes("license")) {
     try {
       repo.license = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/license`));
     } catch (err) {
@@ -117,7 +117,7 @@ async function enhanceRepository(req, res, repo) {
   }
   for (const prop of ["labels", "teams", "branches", "hooks"]) {
     try {
-      if (req.queryFields.includes(prop)) {
+      if (!repo[prop] && req.queryFields.includes(prop)) {
         repo[prop] = await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/${prop}`);
       }
     } catch (err) {
@@ -130,7 +130,6 @@ async function enhanceRepository(req, res, repo) {
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const {repo, owner} = req;
-    setCompounded(req, res);
     cache.get(req, res, `/repos/${owner}/${repo}`).then(async (repository) => {
       return enhanceRepository(req, res, Object.assign({}, repository[0]));
     }).then(data => sendObject(req, res, next, data))
@@ -148,23 +147,14 @@ async function allRepositories(req, res) {
 
 router.route('/repos/:id([0-9]{4,6})')
   .get((req, res, next) => {
-    const id = req.params.id.match(/[0-9]{4,6}/g);
-    setCompounded(req, res);
+    const id = req.params.id;
     allRepositories()
       .then(async (data) => {
         const all = [];
         for (const repo of data) {
           const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
-          if (conf.group) {
-            if (!id) {
-              all.push(await enhanceRepository(req, res, Object.assign({}, repo)));
-            } else if (conf.group.find(g => g == id)) {
-              const copy = Object.assign({}, repo);
-              if (req.queryFields.includes("w3c")) {
-                copy.w3c = conf;
-              }
-              all.push(await enhanceRepository(req, res, copy));
-            }
+          if (conf.group && conf.group.find(g => g == id)) {
+            all.push(await enhanceRepository(req, res, repo));
           }
         }
         return all;
@@ -173,9 +163,83 @@ router.route('/repos/:id([0-9]{4,6})')
       .catch(err => sendError(req, res, next, err));
   });
 
+async function filterIssues(req, res, repo) {
+  let state = req.query.state;
+  let labels = req.query.labels;
+  let search = req.query.search;
+  return cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/issues?state=all`)
+    .then(data => {
+      if (!state) {
+        state = "open";
+      }
+      if (state !== "all") {
+        data = data.filter(i => i.state === state);
+      }
+      return data;
+    })
+    .then(data => {
+      if (!labels) {
+        return data;
+      }
+      labels = labels.split(',').map(s => s.toLowerCase());
+      return data.filter(i => i.labels.find(l => labels.includes(l.name.toLowerCase())));
+    })
+    .then(data => {
+      if (!search) {
+        return data;
+      }
+      search = search.split(',').map(s => s.toLowerCase());
+      return data.filter(i => {
+        return searchTerms(i.labels.map(l => l.name), search)
+          || i.milestone && searchTerms([i.milestone.title], search)
+          || i.title && searchTerms([i.title], search)
+          || i.assignees && searchTerms(i.assignees.map(l => l.login), search);
+      });
+    })
+}
+
+router.route('/issues/:id([0-9]{4,6})')
+  .get((req, res, next) => {
+    const id = req.params.id;
+    allRepositories()
+      .then(async (data) => {
+        const all = [];
+        const savedTtl = req.ttl;
+        req.ttl = undefined;
+        for (const repo of data) {
+          const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
+          if (conf.group && conf.group.find(g => g == id)) {
+            all.push(repo);
+          }
+        }
+        req.ttl = savedTtl;
+        return all;
+      })
+      .then(async (repos) => {
+        const all = [];
+        for (const repo of repos) {
+          const issues = await filterIssues(req, res, repo)
+          if (issues.length > 0) {
+            issues.forEach(i => {
+              if (!i.repository) {
+                i.repository = {
+                  full_name: repo.full_name,
+                  name: repo.name,
+                  owner: {login: repo.owner.login},
+                }
+              }
+            })
+            all.push(issues);
+          }
+        }
+        return all.flat();
+      })
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
+  });
+
 router.route('/repos')
   .get((req, res, next) => {
-    setCompounded(req, res);
     let types = req.query.type;
     if (!req.queryFields.matches) {
       res.statusCode(406).send("Use the <code>fields</code> parameter");
@@ -191,11 +255,10 @@ router.route('/repos')
           if (!types) {
             all.push(await enhanceRepository(req, res, Object.assign({}, repo)));
           } else if (conf["repo-type"] && conf["repo-type"].find(t => types.includes(t))) {
-            const copy = Object.assign({}, repo);
             if (req.queryFields.includes("w3c")) {
-              copy.w3c = conf;
+              repo.w3c = conf;
             }
-            all.push(await enhanceRepository(req, res, copy));
+            all.push(await enhanceRepository(req, res, repo));
           }
         }
         return all;
