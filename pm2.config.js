@@ -10,6 +10,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production'
       },
+      error_file : "/var/log/nodejs/github-cache.err",
+      out_file : "/var/log/nodejs/github-cache.log",
       "node_args": "--max_old_space_size=1000"
     }
   ]
