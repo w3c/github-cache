@@ -20,6 +20,9 @@
 </head>
 <body>
   <h1>Cache Tester</h1>
+  <p>
+    Execution: <span id="executed">0</span> / <span id="total">0</span> tests.
+  </p>
   <section id='errorlog'>
   </section>
   <section id='log'>
@@ -38,13 +41,16 @@ const URLS = [];
 const traceId = ("" + Math.random()).substring(2, 18); // for resource correlation
 const rtObserver = new PerformanceObserver(list => {
   const resources = list.getEntries().filter(e => URLS.includes(e.name));
-  if (resources.length > 0 && cache.includes("localhost")) {
+  if (resources.length > 0 && config.cache.includes("localhost")) {
     return navigator.sendBeacon(`${config.cache}monitor/beacon`, JSON.stringify({ traceId, resources }));
   }
 });
 rtObserver.observe({entryTypes: ["resource"]});
 
-   function test(url, expectedStatus, key, value) {
+const executedEl = document.getElementById("executed");
+let displayed_tests = 0;
+
+    function test(url, expectedStatus, key, value) {
     let rt;
     let resObject;
     let content;
@@ -62,6 +68,7 @@ rtObserver.observe({entryTypes: ["resource"]});
     });
     urlObserver.observe({entryTypes: ["resource"]});
     function display () {
+      executedEl.textContent = ++displayed_tests;
       console.log({url: url, data: resObject || content, rt: rt});
       const log = document.getElementById('log');
       const errorlog = document.getElementById('errorlog');
@@ -121,9 +128,12 @@ rtObserver.observe({entryTypes: ["resource"]});
       });
   }
 
+  const totalEl = document.getElementById("total");
+  let total_tests = 0;
   function testRoute(url, expectedStatus, key, value) {
     url = `${config.cache}${url}`;
     URLS.push(url);
+    totalEl.textContent = ++total_tests;
     test(url, expectedStatus, key, value);
   }
 
