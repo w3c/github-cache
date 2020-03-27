@@ -50,15 +50,16 @@ function transformContent(ghObject, encoding) {
 }
 
 async function content(req, res, owner, repo, path, encoding) {
+  let data;
   try {
-    return transformContent(await cache.get(req, res, `/repos/${owner}/${repo}/contents/${path}`), encoding);
+    data = transformContent(await cache.get(req, res, `/repos/${owner}/${repo}/contents/${path}`), encoding);
   } catch (e) {
     if (e.status === 304) {
       monitor.error(`compounded requests aren't allowed to return 304 ${req.originalUrl}`);
     }
     //otherwise ignore
   }
-  return (encoding == "json") ? {} : "";
+  return (data) ? data : (encoding == "json") ? {} : "";
 }
 
 async function w3cJson(req, res, owner, repo) {
