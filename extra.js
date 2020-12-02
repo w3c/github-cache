@@ -99,6 +99,15 @@ router.route('/repos/:owner/:repo/.pr-preview.json')
       .catch(err => sendError(req, res, next, err));
   });
 
+router.route('/repos/:owner/:repo/code_of_conduct')
+  .get((req, res, next) => {
+    const {repo, owner} = req;
+    cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/CODE_OF_CONDUCT.md`)
+      .then(data => transformContent(data))
+      .then(data => sendObject(req, res, next, data))
+      .catch(err => sendError(req, res, next, err));
+  });
+
 async function enhanceRepository(req, res, repo) {
   if (!repo.w3c && req.queryFields.includes("w3c")) {
     repo.w3c = await w3cJson(req, res, repo.owner.login, repo.name);
@@ -113,6 +122,20 @@ async function enhanceRepository(req, res, repo) {
   if (!repo.license && req.queryFields.includes("license")) {
     try {
       repo.license = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/license`));
+    } catch (err) {
+      // ignore
+    }
+  }
+  if (!repo.codeOfConduct && req.queryFields.includes("codeOfConduct")) {
+    try {
+      repo.codeOfConduct = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/CODE_OF_CONDUCT.md`));
+    } catch (err) {
+      // ignore
+    }
+  }
+  if (!repo.defaultBranchProtectionRules && req.queryFields.includes("defaultBranchProtectionRules")) {
+    try {
+      repo.defaultBranchProtectionRules = await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/branches/${repo.default_branch}/protection`);
     } catch (err) {
       // ignore
     }

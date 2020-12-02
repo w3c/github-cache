@@ -14,6 +14,7 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/license`
 - `/v3/repos/:owner/:repo/contents/w3c.json`
 - `/v3/repos/:owner/:repo/contents/pr-preview.json`
+- `/v3/repos/:owner/:repo/contents/CODE_OF_CONDUCT.md`
 - `/v3/repos/:owner/:repo/branches`
 - `/v3/repos/:owner/:repo/commits`
 - `/v3/repos/:owner/:repo/issues` (support `state`, `labels`, and `search` parameter)
@@ -28,6 +29,7 @@ The server also exposes additional routes:
 - `/extra/repos/:owner/:repo`
 - `/extra/repos/:owner/:repo/w3c.json`
 - `/extra/repos/:owner/:repo/pr-preview.json`
+- `/extra/repos/:owner/:repo/code_of_conduct`
 
 For each route, you may use the following optional parameters:
 
