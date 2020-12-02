@@ -6,6 +6,7 @@ const t0 = Date.now();
 
 const express = require("express");
 const compression = require("compression");
+const path = require("path");
 
 const config = require("./lib/config.js");
 const monitor = require('./lib/monitor.js');
@@ -32,7 +33,7 @@ app.use((req, res, next) => {
 app.use("/v3", v3);
 app.use("/extra", extra);
 
-app.use("/doc", express.static("docs"));
+app.use("/doc", express.static(path.resolve(__dirname, "docs")));
 
 if (!config.debug) {
   process.on('unhandledRejection', error => {
