@@ -20,8 +20,8 @@ app.set('x-powered-by', false);
 app.set('strict routing', true);
 app.enable('trust proxy');
 
-monitor.setName("GitHub cache", config);
-monitor.install(app);
+monitor.setName("GitHub cache");
+monitor.install(app, config);
 
 app.use(compression());
 
