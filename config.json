@@ -1,7 +1,7 @@
 {
   "ghToken": "give-me-a-proper-token-from-github",
   "port": 8080,
-  "debug": true,
+  "debug": false,
   "refreshCycle": 24,
   "owners": [
     {"login": "w3c" },
