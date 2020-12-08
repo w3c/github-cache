@@ -8,10 +8,11 @@ module.exports = {
       name      : 'github-cache',
       script    : 'index.js',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        PORT    : '8050'
       },
       error_file : "/var/log/nodejs/github-cache.err",
-      out_file : "/var/log/nodejs/github-cache.log",
+      out_file   : "/var/log/nodejs/github-cache.log",
       "node_args": "--max_old_space_size=1000"
     }
   ]
