@@ -10,6 +10,10 @@ const {sendObject, sendError, searchTerms} = require("./lib/utils.js");
 
 const router = express.Router();
 
+if (!config.checkOptions("owners", "refreshCycle")) {
+  console.error("No config.owners or config.refreshCycle configuration");
+}
+
 // Our various routes
 
 router.param('repo', (req, res, next, repo) => {

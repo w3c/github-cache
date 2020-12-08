@@ -44,11 +44,14 @@ if (!config.debug) {
   });
 }
 
-const port = config.port || 5000;
+if (!config.checkOptions("host", "port", "env")) {
+  console.error("Improper configuration. Not Starting");
+  return;
+}
 
-app.listen(port, () => {
-  console.log(`Server started in ${Date.now() - t0}ms at http://localhost:${port}/`);
-  if (!config.debug && process.env["NODE_ENV"] != "production") {
+app.listen(config.port, () => {
+  console.log(`Server started in ${Date.now() - t0}ms at http://${config.host}:${config.port}/`);
+  if (!config.debug && config.env != "production") {
     console.warn("WARNING: 'export NODE_ENV=production' is missing");
     console.warn("See http://expressjs.com/en/advanced/best-practice-performance.html#set-node_env-to-production");
   }

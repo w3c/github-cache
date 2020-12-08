@@ -10,6 +10,10 @@ const {sendObject, sendError, decode, searchTerms} = require("./lib/utils.js");
 
 const router = express.Router();
 
+if (!config.checkOptions("owners")) {
+  console.error("No config.owners configuration");
+}
+
 // Our various routes
 
 router.param('repo', (req, res, next, repo) => {
