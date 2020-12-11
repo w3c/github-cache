@@ -320,8 +320,13 @@ function svgElement(name, attrs, ...content) {
           }
           let className = "duration";
           // see https://www.w3.org/TR/resource-timing/#processing-model
-          shape.appendChild(svgElement("rect", {class: className,
-            width: c(rt.responseEnd-rt.fetchStart), x: 0, height: barWidth+6, y: 0}));
+          if (rt.responseEnd) {
+            shape.appendChild(svgElement("rect", {class: className,
+              width: c(rt.responseEnd-rt.fetchStart), x: 0, height: barWidth+6, y: 0}));
+          } else {
+            shape.appendChild(svgElement("rect", {class: className,
+              width: c(rt.duration), x: 0, height: barWidth+6, y: 0}));
+          }
           if (rt.redirectStart) {
             makeShape('redirect', rt.redirectStart, rt.redirectEnd, 1.5);
           }
