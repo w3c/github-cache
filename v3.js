@@ -204,8 +204,7 @@ async function refresh() {
           setTimeout(refresh, 1000 * 60);
         }
       } catch (err) {
-        monitor.error(`refresh loop crashed`);
-        monitor.error(err);
+        monitor.error(`refresh loop crashed\n ${JSON.stringify(err)}`);
       }
     });
   }
@@ -226,8 +225,7 @@ async function refresh() {
     monitor.log(`refreshing ${repos.length} repositories (${per_minute} per minute)`);
     setTimeout(loop, 1000 * 60); // start working after a minute
   } catch (err) {
-    monitor.error(`refresh cycle crashed`);
-    monitor.error(err);
+    monitor.error(`refresh cycle crashed\n ${JSON.stringify(err)}`);
   }
 }
 
