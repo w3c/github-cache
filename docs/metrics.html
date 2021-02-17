@@ -34,10 +34,10 @@ function domElement(namespaceURI, name, attrs, ...content) {
   return elt;
 }
 function htmlElement(name, attrs, ...content) {
-  return domElement(name, "http://www.w3.org/1999/xhtml", attrs, ...content);
+  return domElement("http://www.w3.org/1999/xhtml", name, attrs, ...content);
 }
 function svgElement(name, attrs, ...content) {
-  return domElement(name, "http://www.w3.org/2000/svg", attrs, ...content);
+  return domElement("http://www.w3.org/2000/svg", name, attrs, ...content);
 }
 
   </script>
