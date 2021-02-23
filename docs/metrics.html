@@ -9,7 +9,7 @@
 // attrs is object (and optional)
 // content is Element or string
 function domElement(namespaceURI, name, attrs, ...content) {
-  const elt = document.createElementNS(name, namespaceURI);
+  const elt = document.createElementNS(namespaceURI, name);
   const makeChild = c => (c instanceof Element) ?
     c : (typeof c === 'string') ?
       document.createTextNode(c) : undefined;
