@@ -81,7 +81,7 @@ async function v3_issue(path) {
 const ORGANIZATION_ROUTES = ['/repos'];
 const REPOSITORY_ROUTES = ['', '/labels', '/teams', '/hooks', '/license',
   '/contents/w3c.json', '/contents/CODE_OF_CONDUCT.md', '/contents/.pr-preview.json',
-  '/contents/CONTRIBUTING.md',
+  '/contents/.github/workflows/auto-publish.yml', '/contents/CONTRIBUTING.md',
   '/branches', '/commits', '/issues?state=all'];
 const ISSUE_ROUTES = ['/comments'];
 

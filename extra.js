@@ -137,6 +137,13 @@ async function enhanceRepository(req, res, repo) {
       // ignore
     }
   }
+  if (!repo.autoPublish && req.queryFields.includes("autopublish")) {
+    try {
+      repo.autoPublish = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/.github/workflows/auto-publish.yml`));
+    } catch (err) {
+      // ignore
+    }
+  }
   if (!repo.defaultBranchProtectionRules && req.queryFields.includes("defaultBranchProtectionRules")) {
     try {
       repo.defaultBranchProtectionRules = await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/branches/${repo.default_branch}/protection`);

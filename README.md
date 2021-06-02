@@ -14,6 +14,7 @@ The server exposes the following routes from GitHub:
 - `/v3/repos/:owner/:repo/license`
 - `/v3/repos/:owner/:repo/contents/w3c.json`
 - `/v3/repos/:owner/:repo/contents/pr-preview.json`
+- `/v3/repos/:owner/:repo/contents/.github/workflows/auto-publish.yml`
 - `/v3/repos/:owner/:repo/contents/CODE_OF_CONDUCT.md`
 - `/v3/repos/:owner/:repo/branches`
 - `/v3/repos/:owner/:repo/commits`
