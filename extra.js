@@ -233,7 +233,7 @@ async function allRepositories(req, res) {
   return results.flat().filter(repo => !repo.archived); // filter out the archived ones
 }
 
-function getRepositories(req, res, next, identifier) {
+function getRepositories(req, res, next, identifier, enhanced) {
   return allRepositories()
     .then(async (data) => {
       const all = [];
@@ -241,7 +241,11 @@ function getRepositories(req, res, next, identifier) {
         const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
         if (conf.group_description && conf.group_description.find(g =>
           (g.id === identifier || g.shortname === identifier))) {
-          all.push(await enhanceRepository(req, res, repo));
+          if (enhanced) {
+            all.push(await enhanceRepository(req, res, repo));
+          } else {
+            all.push(repo);
+          }
         }
       }
       return all;
@@ -250,15 +254,25 @@ function getRepositories(req, res, next, identifier) {
     .catch(err => sendError(req, res, next, err));
 }
 
+// deprecated
 router.route('/repos/:id([0-9]{4,6})')
-  .get((req, res, next) => getRepositories(req, res, next, req.params.id));
+  .get((req, res, next) => getRepositories(req, res, next,
+    Number.parseInt(req.params.id), true));
 
 router.route('/repositories/:id([0-9]{4,6})')
-  .get((req, res, next) => getRepositories(req, res, next, req.params.id));
+  .get((req, res, next) => getRepositories(req, res, next,
+    Number.parseInt(req.params.id), false));
 
 router.route('/repositories/:type/:shortname')
   .get((req, res, next) => getRepositories(req, res, next,
-    `${req.params.type}/${req.params.shortname}`));
+    `${req.params.type}/${req.params.shortname}`, false));
+
+router.route('/repositories/enhanced/:id([0-9]{4,6})')
+  .get((req, res, next) => getRepositories(req, res, next,
+    Number.parseInt(req.params.id), true));
+router.route('/repositories/enhanced/:type/:shortname')
+  .get((req, res, next) => getRepositories(req, res, next,
+    `${req.params.type}/${req.params.shortname}`, true));
 
 async function filterIssues(req, res, repo) {
   let state = req.query.state;
