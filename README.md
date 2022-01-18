@@ -27,10 +27,11 @@ The server also exposes additional routes:
 - `/extra/repos` (support [type](https://w3c.github.io/w3c.json.html#repo-type)). using `fields` is required for this route)
 - `/extra/repositories/:id` (`id` is a W3C Group number)
 - `/extra/repositories/:type/:shortname` (`type/shortname` is from W3C API)
-- `/extra/repositories/enhanced:id`
+- `/extra/repositories/enhanced/:id`
 - `/extra/repositories/enhanced/:type/:shortname`
   enhanced will do further processing on the repository information
 - `/extra/issues/:id` (`id` is a W3C Group number. support `state`, `labels`, and `search` parameter)
+- `/extra/issues/:type/:shortname` (`type/shortname` is from W3C API. support `state`, `labels`, and `search` parameter)
 - `/extra/repos/:owner/:repo`
 - `/extra/repos/:owner/:repo/w3c.json`
 - `/extra/repos/:owner/:repo/pr-preview.json`

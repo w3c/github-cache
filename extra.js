@@ -309,45 +309,52 @@ async function filterIssues(req, res, repo) {
     })
 }
 
-router.route('/issues/:id([0-9]{4,6})')
-  .get((req, res, next) => {
-    const id = req.params.id;
-    allRepositories()
-      .then(async (data) => {
-        const all = [];
-        const savedTtl = req.ttl;
-        req.ttl = undefined;
-        for (const repo of data) {
-          const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
-          if (conf.group && conf.group.find(g => g == id)) {
-            all.push(repo);
-          }
+function getIssues(req, res, next, identifier) {
+  allRepositories()
+    .then(async (data) => {
+      const all = [];
+      const savedTtl = req.ttl;
+      req.ttl = undefined;
+
+      for (const repo of data) {
+        const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
+        if (conf.group_description && conf.group_description.find(g =>
+          (g.id === identifier || g.shortname === identifier))) {
+          all.push(repo);
         }
-        req.ttl = savedTtl;
-        return all;
-      })
-      .then(async (repos) => {
-        const all = [];
-        for (const repo of repos) {
-          const issues = await filterIssues(req, res, repo)
-          if (issues.length > 0) {
-            issues.forEach(i => {
-              if (!i.repository) {
-                i.repository = {
-                  full_name: repo.full_name,
-                  name: repo.name,
-                  owner: {login: repo.owner.login},
-                }
+      }
+      req.ttl = savedTtl;
+      return all;
+    })
+    .then(async (repos) => {
+      const all = [];
+      for (const repo of repos) {
+        const issues = await filterIssues(req, res, repo)
+        if (issues.length > 0) {
+          issues.forEach(i => {
+            if (!i.repository) {
+              i.repository = {
+                full_name: repo.full_name,
+                name: repo.name,
+                owner: {login: repo.owner.login},
               }
-            })
-            all.push(issues);
-          }
+            }
+          })
+          all.push(issues);
         }
-        return all.flat();
-      })
-      .then(data => sendObject(req, res, next, data))
-      .catch(err => sendError(req, res, next, err));
-  });
+      }
+      return all.flat();
+    })
+    .then(data => sendObject(req, res, next, data))
+    .catch(err => sendError(req, res, next, err));
+}
+
+router.route('/issues/:id([0-9]{4,6})')
+  .get((req, res, next) => getIssues(req, res, next,
+    Number.parseInt(req.params.id)));
+router.route('/issues/:type/:shortname')
+  .get((req, res, next) => getIssues(req, res, next,
+    `${req.params.type}/${req.params.shortname}`));
 
 router.route('/repos')
   .get((req, res, next) => {
