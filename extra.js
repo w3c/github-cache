@@ -113,15 +113,17 @@ async function w3cJson(req, res, owner, repo) {
   } else if (w3c.group !== undefined) {
     groups = [getGroup(w3c.group)];
   }
-  w3c.group = [];
-  w3c.group_description = [];
-  groups.forEach(g => {
-    if (g) {
-      w3c.group.push(g.id);
-      w3c.group_description.push({id: g.id, shortname: g.group,
-        name: g.name, is_closed: g.is_closed});
-    } // else eliminate from the list
-  })
+  if (groups) {
+    w3c.group = [];
+    w3c.group_description = [];
+    groups.forEach(g => {
+      if (g) {
+        w3c.group.push(g.id);
+        w3c.group_description.push({id: g.id, shortname: g.group,
+          name: g.name, is_closed: g.is_closed});
+      } // else eliminate from the list
+    })
+  }
   const type = w3c["repo-type"];
   if (type && !Array.isArray(type)) {
     w3c["repo-type"] = [type];
@@ -237,7 +239,7 @@ function getRepositories(req, res, next, identifier) {
       const all = [];
       for (const repo of data) {
         const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
-        if (conf.group_description.find(g =>
+        if (conf.group_description && conf.group_description.find(g =>
           (g.id === identifier || g.shortname === identifier))) {
           all.push(await enhanceRepository(req, res, repo));
         }
@@ -254,7 +256,7 @@ router.route('/repos/:id([0-9]{4,6})')
 router.route('/repositories/:id([0-9]{4,6})')
   .get((req, res, next) => getRepositories(req, res, next, req.params.id));
 
-router.route('/repositories/:type([a-z]{2-5})/:shortname')
+router.route('/repositories/:type/:shortname')
   .get((req, res, next) => getRepositories(req, res, next,
     `${req.params.type}/${req.params.shortname}`));
 
