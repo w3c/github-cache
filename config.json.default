@@ -1,5 +1,6 @@
 {
   "ghToken": "give-me-a-proper-token-from-github",
+  "w3capikey": "give-me-a-proper-W3C-api-key",
   "port": 8080,
   "debug": false,
   "refreshCycle": 24,
