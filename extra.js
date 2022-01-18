@@ -93,6 +93,9 @@ function refreshGroups() {
 refreshGroups();
 
 function getGroup(identifier) {
+  if (identifier.match(/^[0-9]+$/)) {
+    identifier = Number.parseInt(identifier);
+  }
   for (let index = 0; index < W3C_GROUPS.length; index++) {
     const g = W3C_GROUPS[index];
     if (identifier === g.group || identifier === g.id) {
