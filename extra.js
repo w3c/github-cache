@@ -179,7 +179,12 @@ async function enhanceRepository(req, res, repo) {
     try {
       repo.codeOfConduct = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/CODE_OF_CONDUCT.md`));
     } catch (err) {
-      // ignore
+      try {
+        repo.codeOfConduct = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/.github/CODE_OF_CONDUCT.md`));
+      } catch (err) {
+        console.log(err);
+        // ignore
+      }
     }
   }
   if (!repo.autoPublish && req.queryFields.includes("autopublish")) {
