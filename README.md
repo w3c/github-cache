@@ -25,12 +25,17 @@ The server exposes the following routes from GitHub:
 The server also exposes additional routes:
 
 - `/extra/repos` (support [type](https://w3c.github.io/w3c.json.html#repo-type)). using `fields` is required for this route)
-- `/extra/repos/:id` (`id` is a W3C Group number)
+- `/extra/repositories/:id` (`id` is a W3C Group number)
+- `/extra/repositories/:type/:shortname` (`type/shortname` is from W3C API)
 - `/extra/issues/:id` (`id` is a W3C Group number. support `state`, `labels`, and `search` parameter)
 - `/extra/repos/:owner/:repo`
 - `/extra/repos/:owner/:repo/w3c.json`
 - `/extra/repos/:owner/:repo/pr-preview.json`
 - `/extra/repos/:owner/:repo/code_of_conduct`
+
+Deprecated routes:
+- `/extra/repos/:id` (`id` is a W3C Group number)
+
 
 For each route, you may use the following optional parameters:
 

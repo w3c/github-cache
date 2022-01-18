@@ -6,7 +6,7 @@ const config = require("./lib/config.js");
 const express = require("express");
 const cache = require("./lib/cache.js");
 const monitor = require("./lib/monitor.js");
-const {sendObject, sendError, decode, searchTerms} = require("./lib/utils.js");
+const {sendObject, sendError, decode, searchTerms, fetchW3C} = require("./lib/utils.js");
 
 const router = express.Router();
 
@@ -67,16 +67,61 @@ async function content(req, res, owner, repo, path, encoding) {
   return (encoding == "json") ? {} : "";
 }
 
+//
+let W3C_GROUPS;
+
+function refreshGroups() {
+  fetchW3C("groups").then(res => {
+    return res;
+  })
+    .then(gs => {
+      gs.forEach(g => {
+        const matches = g._links.self.href.match("api.w3.org/groups/([a-z]+)/(.+)");
+        if (matches) {
+          g.group = `${matches[1]}/${matches[2]}`;
+        } else {
+          monitor.error(`Cannot match self link for ${g.id}`);
+        }
+      })
+      monitor.log(`Refreshed W3C groups`);
+      W3C_GROUPS = gs;
+    }).catch(err => {
+      monitor.error(`Cannot refresh list of W3C groups ${err}`);
+    }).then(() => setTimeout(refreshGroups, 21600000)); // every 6 hours;
+}
+
+refreshGroups();
+
+function getGroup(identifier) {
+  for (let index = 0; index < W3C_GROUPS.length; index++) {
+    const g = W3C_GROUPS[index];
+    if (identifier === g.group || identifier === g.id) {
+      return g;
+    }
+  }
+  return undefined;
+}
+
 async function w3cJson(req, res, owner, repo) {
   if (repo.w3c) {
     return repo.w3c;
   }
   const w3c = await content(req, res, owner, repo, "w3c.json", "json");
+  let groups;
   if (Array.isArray(w3c.group)) {
-    w3c.group = w3c.group.map(Number.parseInt);
+    groups = w3c.group.map(getGroup);
   } else if (w3c.group !== undefined) {
-    w3c.group = [Number.parseInt(w3c.group)];
+    groups = [getGroup(w3c.group)];
   }
+  w3c.group = [];
+  w3c.group_description = [];
+  groups.forEach(g => {
+    if (g) {
+      w3c.group.push(g.id);
+      w3c.group_description.push({id: g.id, shortname: g.group,
+        name: g.name, is_closed: g.is_closed});
+    } // else eliminate from the list
+  })
   const type = w3c["repo-type"];
   if (type && !Array.isArray(type)) {
     w3c["repo-type"] = [type];
@@ -181,23 +226,32 @@ async function allRepositories(req, res) {
   return results.flat().filter(repo => !repo.archived); // filter out the archived ones
 }
 
-router.route('/repos/:id([0-9]{4,6})')
-  .get((req, res, next) => {
-    const id = req.params.id;
-    allRepositories()
-      .then(async (data) => {
-        const all = [];
-        for (const repo of data) {
-          const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
-          if (conf.group && conf.group.find(g => g == id)) {
-            all.push(await enhanceRepository(req, res, repo));
-          }
+function getRepositories(req, res, next, identifier) {
+  return allRepositories()
+    .then(async (data) => {
+      const all = [];
+      for (const repo of data) {
+        const conf = (await w3cJson(req, res, repo.owner.login, repo.name));
+        if (conf.group_description.find(g =>
+          (g.id === identifier || g.shortname === identifier))) {
+          all.push(await enhanceRepository(req, res, repo));
         }
-        return all;
-      })
-      .then(data => sendObject(req, res, next, data))
-      .catch(err => sendError(req, res, next, err));
-  });
+      }
+      return all;
+    })
+    .then(data => sendObject(req, res, next, data))
+    .catch(err => sendError(req, res, next, err));
+}
+
+router.route('/repos/:id([0-9]{4,6})')
+  .get((req, res, next) => getRepositories(req, res, next, req.params.id));
+
+router.route('/repositories/:id([0-9]{4,6})')
+  .get((req, res, next) => getRepositories(req, res, next, req.params.id));
+
+router.route('/repositories/:type([a-z]{2-5})/:shortname')
+  .get((req, res, next) => getRepositories(req, res, next,
+    `${req.params.type}/${req.params.shortname}`));
 
 async function filterIssues(req, res, repo) {
   let state = req.query.state;
