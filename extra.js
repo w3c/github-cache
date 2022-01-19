@@ -67,30 +67,8 @@ async function content(req, res, owner, repo, path, encoding) {
   return (encoding == "json") ? {} : "";
 }
 
-//
+// see refreshW3CGroups
 let W3C_GROUPS;
-
-function refreshGroups() {
-  fetchW3C("groups").then(res => {
-    return res;
-  })
-    .then(gs => {
-      gs.forEach(g => {
-        const matches = g._links.self.href.match("api.w3.org/groups/([a-z]+)/(.+)");
-        if (matches) {
-          g.group = `${matches[1]}/${matches[2]}`;
-        } else {
-          monitor.error(`Cannot match self link for ${g.id}`);
-        }
-      })
-      monitor.log(`Refreshed W3C groups`);
-      W3C_GROUPS = gs;
-    }).catch(err => {
-      monitor.error(`Cannot refresh list of W3C groups ${err}`);
-    }).then(() => setTimeout(refreshGroups, 21600000)); // every 6 hours;
-}
-
-refreshGroups();
 
 function getGroup(identifier) {
   if (typeof identifier === "string" && identifier.match(/^[0-9]+$/)) {
@@ -237,7 +215,7 @@ async function allRepositories(req, res) {
   return results.flat().filter(repo => !repo.archived); // filter out the archived ones
 }
 
-function getRepositories(req, res, next, identifier, enhanced) {
+function getRepositories(req, res, identifier, enhanced) {
   return allRepositories()
     .then(async (data) => {
       const all = [];
@@ -253,29 +231,33 @@ function getRepositories(req, res, next, identifier, enhanced) {
         }
       }
       return all;
-    })
+    });
+}
+
+function sendRepositories(req, res, next, identifier, enhanced) {
+  getRepositories(req, res, next, identifier, enhanced)
     .then(data => sendObject(req, res, next, data))
     .catch(err => sendError(req, res, next, err));
 }
 
 // deprecated
 router.route('/repos/:id([0-9]{4,6})')
-  .get((req, res, next) => getRepositories(req, res, next,
+  .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), true));
 
 router.route('/repositories/:id([0-9]{4,6})')
-  .get((req, res, next) => getRepositories(req, res, next,
+  .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), false));
 
 router.route('/repositories/:type/:shortname')
-  .get((req, res, next) => getRepositories(req, res, next,
+  .get((req, res, next) => sendRepositories(req, res, next,
     `${req.params.type}/${req.params.shortname}`, false));
 
 router.route('/repositories/enhanced/:id([0-9]{4,6})')
-  .get((req, res, next) => getRepositories(req, res, next,
+  .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), true));
 router.route('/repositories/enhanced/:type/:shortname')
-  .get((req, res, next) => getRepositories(req, res, next,
+  .get((req, res, next) => sendRepositories(req, res, next,
     `${req.params.type}/${req.params.shortname}`, true));
 
 async function filterIssues(req, res, repo) {
@@ -388,5 +370,47 @@ router.route('/repos')
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
+
+// those are entries that I'd like to have available with ttl of 5 hours
+
+function refreshW3CGroups() {
+  return fetchW3C("groups").then(res => {
+    return res;
+  })
+    .then(gs => {
+      gs.forEach(g => {
+        const matches = g._links.self.href.match("api.w3.org/groups/([a-z]+)/(.+)");
+        if (matches) {
+          g.group = `${matches[1]}/${matches[2]}`;
+        } else {
+          monitor.error(`Cannot match self link for ${g.id}`);
+        }
+      })
+      monitor.log(`Refreshed W3C groups`);
+      W3C_GROUPS = gs;
+    }).catch(err => {
+      monitor.error(`Cannot refresh list of W3C groups ${err}`);
+    }).then(() => setTimeout(refreshW3CGroups, 21600000)); // every 6 hours;
+}
+refreshW3CGroups();
+
+async function refresh() {
+  if (config.debug) {
+    // abort
+    monitor.warn(`refresh cycle not starting (debug mode)`);
+    return;
+  }
+  async function loop() {
+    monitor.log("refresh /repositories route");
+    getRepositories({}, {}, {}, 45211, true)
+      .catch(monitor.error)
+      .then(() => {
+        setTimeout(loop, 1000 * 60 * 60 * 4); // every 4 hours
+      });
+  }
+  setTimeout(loop, 1000 * 60 * 5); // after 5 minutes
+}
+
+refresh();
 
 module.exports = router;
