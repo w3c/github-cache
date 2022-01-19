@@ -416,7 +416,7 @@ async function refresh() {
   }
   async function loop() {
     monitor.log("refresh /repositories route");
-    getRepositories({}, {}, {}, 45211, true)
+    getRepositories({}, undefined, undefined, 45211, true)
       .catch(monitor.error)
       .then(() => {
         setTimeout(loop, 1000 * 60 * 60 * 4); // every 4 hours
