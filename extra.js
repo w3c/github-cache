@@ -414,10 +414,12 @@ async function refresh() {
     monitor.warn(`refresh cycle not starting (debug mode)`);
     return;
   }
-  async function loop() {
+  function loop() {
     monitor.log("refresh /repositories route");
     getRepositories({}, undefined, "other/unknown", true)
-      .catch(monitor.error)
+      .catch(err => {
+        monitor.error(`Cannot refresh /repositories route ${err}`)
+      })
       .then(() => {
         setTimeout(loop, 1000 * 60 * 60 * 4); // every 4 hours
       });
