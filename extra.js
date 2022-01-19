@@ -239,7 +239,7 @@ function getRepositories(req, res, identifier, enhanced) {
 }
 
 function sendRepositories(req, res, next, identifier, enhanced) {
-  getRepositories(req, res, next, identifier, enhanced)
+  getRepositories(req, res, identifier, enhanced)
     .then(data => sendObject(req, res, next, data))
     .catch(err => sendError(req, res, next, err));
 }
