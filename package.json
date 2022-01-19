@@ -22,7 +22,7 @@
     "nodemailer": "6.*.*"
   },
   "devDependencies": {
-    "eslint": "6.*.*"
+    "eslint": "^8.7.0"
   },
   "eslintConfig": {
     "env": {
