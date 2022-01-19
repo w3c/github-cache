@@ -112,6 +112,7 @@ async function w3cJson(req, res, owner, repo) {
   return w3c;
 }
 
+monitor.log(`adding extra route /repos/:owner/:repo/w3c.json`);
 router.route('/repos/:owner/:repo/w3c.json')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -123,6 +124,7 @@ router.route('/repos/:owner/:repo/w3c.json')
       .catch(err => sendError(req, res, next, err));
   });
 
+monitor.log(`adding extra route /repos/:owner/:repo/.pr-preview.json`);
 router.route('/repos/:owner/:repo/.pr-preview.json')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -137,6 +139,7 @@ function codeOfConduct(req, res, owner, repo) {
     .then(data => transformContent(data));
 }
 
+monitor.log(`adding extra route /repos/:owner/:repo/code_of_conduct`);
 router.route('/repos/:owner/:repo/code_of_conduct')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -197,6 +200,7 @@ async function enhanceRepository(req, res, repo) {
   return repo;
 }
 
+monitor.log(`adding extra route /repos/:owner/:repo`);
 router.route('/repos/:owner/:repo')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -241,21 +245,27 @@ function sendRepositories(req, res, next, identifier, enhanced) {
 }
 
 // deprecated
+monitor.log(`adding extra route /repos/:id([0-9]{4,6})`);
 router.route('/repos/:id([0-9]{4,6})')
   .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), true));
 
+monitor.log(`adding extra route /repositories/:id([0-9]{4,6})`);
 router.route('/repositories/:id([0-9]{4,6})')
   .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), false));
 
+monitor.log(`adding extra route /repositories/:type/:shortname`);
 router.route('/repositories/:type/:shortname')
   .get((req, res, next) => sendRepositories(req, res, next,
     `${req.params.type}/${req.params.shortname}`, false));
 
+monitor.log(`adding extra route /repositories/enhanced/:id([0-9]{4,6})`);
 router.route('/repositories/enhanced/:id([0-9]{4,6})')
   .get((req, res, next) => sendRepositories(req, res, next,
     Number.parseInt(req.params.id), true));
+
+monitor.log(`adding extra route /repositories/enhanced/:type/:shortname`);
 router.route('/repositories/enhanced/:type/:shortname')
   .get((req, res, next) => sendRepositories(req, res, next,
     `${req.params.type}/${req.params.shortname}`, true));
@@ -335,13 +345,17 @@ function getIssues(req, res, next, identifier) {
     .catch(err => sendError(req, res, next, err));
 }
 
+monitor.log(`adding extra route /issues/:id([0-9]{4,6})`);
 router.route('/issues/:id([0-9]{4,6})')
   .get((req, res, next) => getIssues(req, res, next,
     Number.parseInt(req.params.id)));
+
+monitor.log(`adding extra route /issues/:type/:shortname`);
 router.route('/issues/:type/:shortname')
   .get((req, res, next) => getIssues(req, res, next,
     `${req.params.type}/${req.params.shortname}`));
 
+monitor.log(`adding extra route /repos`);
 router.route('/repos')
   .get((req, res, next) => {
     let types = req.query.type;

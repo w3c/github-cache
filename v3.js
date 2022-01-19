@@ -41,7 +41,7 @@ router.all("/*", (req, res, next) => {
 
 async function v3_org(path) {
   const route = `/orgs/:owner${path}`;
-  monitor.log(`adding route ${route}`);
+  monitor.log(`adding V3 route ${route}`);
   router.route(route)
     .get((req, res, next) => {
       const {owner} = req;
@@ -54,7 +54,7 @@ async function v3_org(path) {
 
 async function v3_repo(path) {
   const route = `/repos/:owner/:repo${path}`;
-  monitor.log(`adding route ${route}`);
+  monitor.log(`adding V3 route ${route}`);
   router.route(route)
     .get((req, res, next) => {
       const {repo, owner} = req;
@@ -67,7 +67,7 @@ async function v3_repo(path) {
 
 async function v3_issue(path) {
   const route = `/repos/:owner/:repo/issues/:number${path}`;
-  monitor.log(`adding route ${route}`);
+  monitor.log(`adding V3 route ${route}`);
   router.route(route)
     .get((req, res, next) => {
       const {repo, owner} = req;
@@ -109,7 +109,7 @@ function compareIssues(a, b) {
   return 0;
 }
 
-monitor.log(`adding route /repos/:owner/:repo/issues`);
+monitor.log(`adding V3 route /repos/:owner/:repo/issues`);
 router.route('/repos/:owner/:repo/issues')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -150,7 +150,7 @@ router.route('/repos/:owner/:repo/issues')
       .catch(err => sendError(req, res, next, err));
   });
 
-monitor.log(`adding route /repos/:owner/:repo/issues/:number`);
+monitor.log(`adding V3 route /repos/:owner/:repo/issues/:number`);
 router.route('/repos/:owner/:repo/issues/:number')
   .get((req, res, next) => {
     const {repo, owner} = req;
@@ -182,7 +182,7 @@ async function refreshRepository(owner, repo) {
 async function refresh() {
   if (config.debug) {
     // abort
-    monitor.warn(`refresh cycle not starting (debug mode)`);
+    monitor.warn(`V3 refresh cycle not starting (debug mode)`);
     return;
   }
   let current = 0;
