@@ -153,11 +153,16 @@ router.route('/repos/:owner/:repo/.pr-preview.json')
       .catch(err => sendError(req, res, next, err));
   });
 
+function codeOfConduct(req, res, owner, repo) {
+  return cache.get(req, res, `/repos/${owner}/${repo}/contents/CODE_OF_CONDUCT.md`)
+    .catch(() => cache.get(req, res, `/repos/${owner}/${repo}/contents/.github/CODE_OF_CONDUCT.md`))
+    .then(data => transformContent(data));
+}
+
 router.route('/repos/:owner/:repo/code_of_conduct')
   .get((req, res, next) => {
     const {repo, owner} = req;
-    cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/CODE_OF_CONDUCT.md`)
-      .then(data => transformContent(data))
+    codeOfConduct(req, res, owner, repo)
       .then(data => sendObject(req, res, next, data))
       .catch(err => sendError(req, res, next, err));
   });
@@ -182,14 +187,10 @@ async function enhanceRepository(req, res, repo) {
   }
   if (!repo.codeOfConduct && req.queryFields.includes("codeOfConduct")) {
     try {
-      repo.codeOfConduct = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/CODE_OF_CONDUCT.md`));
+      repo.codeOfConduct = codeOfConduct(req, res, repo.owner.login, repo.name);
     } catch (err) {
-      try {
-        repo.codeOfConduct = transformContent(await cache.get(req, res, `/repos/${repo.owner.login}/${repo.name}/contents/.github/CODE_OF_CONDUCT.md`));
-      } catch (err) {
-        console.log(err);
-        // ignore
-      }
+      console.log(err);
+      // ignore
     }
   }
   if (!repo.autoPublish && req.queryFields.includes("autopublish")) {
