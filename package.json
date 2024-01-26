@@ -18,7 +18,7 @@
     "body-parser": "1.*.*",
     "compression": "1.*.*",
     "express": "4.*.*",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "2.*.*",
     "nodemailer": "6.*.*"
   },
   "devDependencies": {
