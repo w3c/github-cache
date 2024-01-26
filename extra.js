@@ -220,7 +220,7 @@ async function allRepositories(req, res) {
 }
 
 function getRepositories(req, res, identifier, enhanced) {
-  return allRepositories()
+  return allRepositories(req, res)
     .then(async (data) => {
       const all = [];
       for (const repo of data) {
