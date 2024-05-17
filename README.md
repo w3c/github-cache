@@ -70,6 +70,16 @@ For example:
 
 Make sure to set up config.json properly, including the CORS allowed origins.
 
+## Cache state recovery
+
+The cache might be missing file entries.
+
+```js
+// check the cache state
+npm run check
+```
+
+
 ## Sample code
 
 Example of the cache used in code:
