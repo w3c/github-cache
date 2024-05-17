@@ -9,7 +9,7 @@ const process = require('node:process');
 
 async function check() {
   await cache.checkEntries();
-  process.exit(0);
+  // process.exit(0); don't exit abrutly
 }
 
 check();
