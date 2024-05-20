@@ -75,7 +75,10 @@ Make sure to set up config.json properly, including the CORS allowed origins.
 The cache might be missing file entries.
 
 ```js
-// check the cache state
+// display the cache state
+npm run status
+
+// check the cache state and fix if needed
 npm run check
 ```
 

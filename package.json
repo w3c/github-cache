@@ -11,7 +11,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint .",
     "start": "node index.js",
-    "check": "node check-cache.js"
+    "check": "node check-cache.js",
+    "status": "node check-cache.js -status"
   },
   "dependencies": {
     "@octokit/core": "2.*.*",

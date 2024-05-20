@@ -174,7 +174,7 @@ function start() {
       title: "GitHub limit",
       update: (usage) => [usage.GitHub.rate.limit-usage.GitHub.rate.remaining, usage.GitHub.rate.limit]
     }]);
-    const g2 = new Graph("body", [
+  const g2 = new Graph("body", [
     {
       title: "V8 New space",
       format: formatMB,

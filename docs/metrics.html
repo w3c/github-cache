@@ -145,10 +145,10 @@ function svgElement(name, attrs, ...content) {
     <p>
       This page indicates current usage and performance metrics collected by the server.
     </p>
-    <h2>Usage</h2>
-    <p id='stats'>
-    </p>
-    <h2>Resource and Server Timings</h2>
+    <section id="stats">
+    <h2 id='usage'>Usage</h2>
+    </section>
+    <h2 id="timings">Resource and Server Timings</h2>
     <section id="chart" style='width: 100%'>
       <p>by <a href="#" onclick='draw("name")'>url</a>,
         <a href="#" onclick='draw("traceId")'>session</a>,
@@ -209,14 +209,22 @@ function svgElement(name, attrs, ...content) {
     }
     async function stats() {
       const usage = await fetch(`${config.cache}monitor/usage`).then(res => res.json());
-      const st = document.getElementById('stats');
-      st.appendChild(htmlElement("span", `Status: ${usage.status}, `));
-      st.appendChild(htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime/60/60))} hours, `));
-      st.appendChild(htmlElement("span", `RSS: ${Math.floor(usage.rss/1000000)}Mb, `));
-      st.appendChild(htmlElement("span", `Requests: ${usage.requests.total}, `));
-      st.appendChild(htmlElement("span", `Errors: ${usage.requests.errors}, `));
-      st.appendChild(htmlElement("span", `GitHub Rate Remaining: ${usage.GitHub.rate.remaining}, `));
-      st.appendChild(htmlElement("span", `GitHub Low Rate: ${usage.GitHub.minimumRemaining}.`));
+      const section = document.getElementById('stats');
+      const p1 = htmlElement("p", 
+       htmlElement("span", `Status: ${usage.status}, `),
+       htmlElement("span", `Uptime: ${f(Math.floor(usage.uptime/60/60))} hours, `),
+       htmlElement("span", `RSS: ${Math.floor(usage.rss/1000000)}Mb, `),
+       htmlElement("span", `Requests: ${usage.requests.total}, `),
+       htmlElement("span", `Errors: ${usage.requests.errors}, `),
+       htmlElement("span", `GitHub Rate Remaining: ${usage.GitHub.rate.remaining}, `),
+       htmlElement("span", `GitHub Low Rate: ${usage.GitHub.minimumRemaining}.`));
+      section.appendChild(p1);
+      const p2 = htmlElement("p", 
+       htmlElement("span", `Cache: ${usage.cache.entries} entries`));
+      for (const [key, entry] of Object.entries(usage.cache.entryStatus)) {
+        p2.appendChild(htmlElement("span", ", ", htmlElement("code", key), `: ${entry}`));
+      }
+      section.appendChild(p2);
     }
     function algo(criteria) {
       return (a, b) => {
