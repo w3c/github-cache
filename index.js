@@ -10,9 +10,10 @@ const path = require("path");
 
 const config = require("./lib/config.js");
 const monitor = require('./lib/monitor.js');
-const {enhanceRequest} = require("./lib/utils.js");
+const {enhanceRequest, sendObject} = require("./lib/utils.js");
 const v3 = require("./v3.js");
 const extra = require("./extra.js");
+const cache = require('./lib/cache.js');
 
 const app = express();
 
@@ -34,6 +35,13 @@ app.use("/v3", v3);
 app.use("/extra", extra);
 
 app.use("/doc", express.static(path.resolve(__dirname, "docs")));
+
+app.post("/cache/fix", (req, res, next) => {
+    cache.fixEntries().then(data => {
+      sendObject(req, res, next, data);
+    });
+  }
+);
 
 if (!config.debug) {
   process.on('unhandledRejection', error => {

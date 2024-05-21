@@ -147,7 +147,14 @@ function svgElement(name, attrs, ...content) {
     </p>
     <section id="stats">
     <h2 id='usage'>Usage</h2>
-    </section>
+    <form action="/cache/fix" method="post">
+      If you're getting weird cache errors, try to
+      <button type="submit">fix the cache</button>
+    </form>
+    <p><a href="https://github.com/plehegar/github-cache/">github-cache</a>:
+      <a href='../monitor/logs'>logs</a>, <a href='../monitor/gh_logs'>gh_logs</a>, <a href='../monitor/clear_beacon'>reset</a>, <a href='active.html'>usage</a></p>
+      </section>
+    <section>
     <h2 id="timings">Resource and Server Timings</h2>
     <section id="chart" style='width: 100%'>
       <p>by <a href="#" onclick='draw("name")'>url</a>,
@@ -183,8 +190,7 @@ function svgElement(name, attrs, ...content) {
       <section id='svgcharts'>
       </section>
     </section>
-<p style='text-align:right'><a href="https://github.com/plehegar/github-cache/">github-cache</a>:
-    <a href='../monitor/logs'>logs</a>, <a href='../monitor/gh_logs'>gh_logs</a>, <a href='../monitor/clear_beacon'>reset</a>, <a href='active.html'>usage</a></p>
+    </section>
 </main>
   <script>
     const config = {
