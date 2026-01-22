@@ -9,6 +9,7 @@ The server exposes the following routes from GitHub:
 - `/v3/orgs/:owner/repos`
 - `/v3/repos/:owner/:repo`
 - `/v3/repos/:owner/:repo/labels`
+- `/v3/repos/:owner/:repo/milestones`
 - `/v3/repos/:owner/:repo/teams`
 - `/v3/repos/:owner/:repo/hooks`
 - `/v3/repos/:owner/:repo/license`
